@@ -104,7 +104,7 @@ function RegistrationPage({ onBackToLogin, onRegisterUser }) {
           </div>
 
           <div className="input-group">
-  <PhoneInput
+<PhoneInput
     international
     defaultCountry="IN"
     placeholder="Enter phone number"

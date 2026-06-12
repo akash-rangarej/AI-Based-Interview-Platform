@@ -1,29 +1,28 @@
 import { useState } from "react";
 import api, { getErrorMessage } from "../../api/axiosClient";
 
-function ForgotPassword({ onBackToLogin, onOtpVerified }) {
-  const [step, setStep] = useState("email");
-  const [email, setEmail] = useState("");
+function ForgotPassword({ onBackToLogin, onOtpVerified, userEmail, userPhone }) {
+  const [step, setStep] = useState("otp-options"); // skip email step
   const [otp, setOtp] = useState("");
-  const [profilePhoto, setProfilePhoto] = useState("");
   const [message, setMessage] = useState("");
   const [loading, setLoading] = useState(false);
+  const [otpMethod, setOtpMethod] = useState(""); // "email" or "phone"
+  
 
-  const handleEmailSubmit = async (e) => {
-    e.preventDefault();
+  const handleSendOtp = async (method) => {
     setLoading(true);
     setMessage("");
+    setOtpMethod(method);
 
     try {
-      const response = await api.post("/auth/forgot-password", { email });
-      setMessage(response.data?.message || "OTP sent to your registered email.");
-      setProfilePhoto(response.data?.user?.profile_photo || "");
-      console.log("Forgot password response:", response.data);
+      await api.post("/auth/forgot-password", {
+        email: userEmail,
+        method // send "email" or "phone" to backend
+      });
+      setMessage(`OTP sent to your registered ${method}.`);
       setStep("otp");
     } catch (error) {
-      setMessage(
-        getErrorMessage(error, "Unable to send OTP. Please try again.")
-      );
+      setMessage(getErrorMessage(error, "Unable to send OTP. Please try again."));
     } finally {
       setLoading(false);
     }
@@ -38,13 +37,11 @@ function ForgotPassword({ onBackToLogin, onOtpVerified }) {
 
     try {
       const response = await api.post("/auth/verify-otp", {
-        email,
-        otp,
+        email: userEmail,
+        otp: otp.toString()
       });
-
       setMessage(response.data?.message || "OTP verified.");
-      console.log("OTP verification response:", response.data);
-      onOtpVerified(email, otp);
+      onOtpVerified(userEmail, otp);
     } catch (error) {
       setMessage(getErrorMessage(error, "Invalid OTP. Please try again."));
     } finally {
@@ -55,34 +52,31 @@ function ForgotPassword({ onBackToLogin, onOtpVerified }) {
   return (
     <div className="login-container">
       <div className="login-card forgot-card">
-        <div className="profile-icon profile-photo-icon">
-          {profilePhoto ? (
-            <img src={profilePhoto} alt="Profile" />
-          ) : (
-            "FP"
-          )}
-        </div>
-
+        <div className="profile-icon profile-photo-icon">FP</div>
         <h2>Forgot Password</h2>
 
-        {step === "email" && (
-          <form onSubmit={handleEmailSubmit}>
-            <div className="input-group">
-              <input
-                type="email"
-                placeholder="Registered Email ID"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                required
-              />
-            </div>
+        {step === "otp-options" && (
+          <div className="otp-options">
+            <p>How would you like to receive the OTP?</p>
 
             {message && <p className="form-message">{message}</p>}
 
-            <button type="submit" className="login-btn">
-              {loading ? "SENDING..." : "SEND OTP"}
+            <button
+              className="login-btn"
+              onClick={() => handleSendOtp("email")}
+              disabled={loading}
+            >
+              {loading && otpMethod === "email" ? "SENDING..." : "SEND OTP TO EMAIL"}
             </button>
-          </form>
+
+            <button
+              className="login-btn"
+              onClick={() => handleSendOtp("phone")}
+              disabled={loading}
+            >
+              {loading && otpMethod === "phone" ? "SENDING..." : "SEND OTP TO MOBILE"}
+            </button>
+          </div>
         )}
 
         {step === "otp" && (
@@ -101,8 +95,16 @@ function ForgotPassword({ onBackToLogin, onOtpVerified }) {
 
             {message && <p className="form-message">{message}</p>}
 
-            <button type="submit" className="login-btn">
+            <button type="submit" className="login-btn" disabled={loading}>
               {loading ? "VERIFYING..." : "VERIFY OTP"}
+            </button>
+
+            <button
+              type="button"
+              className="register-text"
+              onClick={() => setStep("otp-options")}
+            >
+              Try another method
             </button>
           </form>
         )}

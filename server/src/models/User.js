@@ -19,13 +19,17 @@ const userSchema = new mongoose.Schema({
         required:true
     },
 
+    resetPasswordOtp: { type: String },
+
+    resetPasswordOtpExpire: { type: Date },
+
     role:{
         type:String,
         enum:["admin","candidate","recruiter"],
         default:"candidate"
     },
 
-    phone:String,
+   ph_no: { type: String },
 
     skills:[String],
 

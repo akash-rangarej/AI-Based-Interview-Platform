@@ -28,6 +28,7 @@ const getInitialUsers = () => {
 
 function App() {
   const [page, setPage] = useState("login");
+  const [forgotEmail, setForgotEmail] = useState("");
   const [registeredUsers, setRegisteredUsers] = useState(getInitialUsers);
   const [currentUser, setCurrentUser] = useState(() => {
     const savedUser = localStorage.getItem(AUTH_USER_KEY);
@@ -94,7 +95,6 @@ function App() {
   setCurrentUser(user);
   localStorage.setItem(AUTH_USER_KEY, JSON.stringify(user));
 
-  console.log("Logged in user:", user);
 
   const role = user?.role?.toLowerCase();
 
@@ -158,11 +158,14 @@ if (page === "recruiter-portal") {
 
 
   let pageContent = (
-    <Login
-      onLoginSuccess={handleLoginSuccess}
-      onForgotPasswordClick={() => setPage("forgot-password")}
-      onRegisterClick={() => setPage("register")}
-    />
+  <Login
+  onLoginSuccess={handleLoginSuccess}
+  onForgotPasswordClick={(email) => {
+    setForgotEmail(email);
+    setPage("forgot-password");
+  }}
+  onRegisterClick={() => setPage("register")}
+/>
   );
 
   if (page === "register") {
@@ -179,6 +182,7 @@ if (page === "recruiter-portal") {
       <ForgotPassword
         onBackToLogin={() => setPage("login")}
         onOtpVerified={handleOtpVerified}
+        userEmail={forgotEmail} 
       />
     );
   }

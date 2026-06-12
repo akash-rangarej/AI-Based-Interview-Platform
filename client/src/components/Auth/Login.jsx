@@ -73,7 +73,14 @@ function Login({ onForgotPasswordClick, onLoginSuccess, onRegisterClick }) {
             <button
               type="button"
               className="link-button"
-              onClick={onForgotPasswordClick}
+
+              onClick={() => {
+  if (!email) {
+    setMessage("Please enter your email first.");
+    return;
+  }
+  onForgotPasswordClick(email);
+}}
             >
               Forgot Password?
             </button>

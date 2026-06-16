@@ -26,7 +26,7 @@ const sendPasswordResetOtp = async (user, otp) => {
         from: process.env.EMAIL_FROM || process.env.EMAIL_USER,
         to: user.email,
         subject: "Password reset OTP",
-        text: "Your password reset OTP is ${otp}. It will expire in 10 minutes."
+        text: `Your password reset OTP is ${otp}. It will expire in 10 minutes.`
     });
 };
 

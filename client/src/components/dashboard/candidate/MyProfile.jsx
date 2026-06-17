@@ -5,6 +5,8 @@ import api from "../../../api/axiosClient";
 const MyProfile = ({ user }) => {
   const [resume, setResume] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [saveError, setSaveError]     = useState("");
+const [saveSuccess, setSaveSuccess] = useState("");
 
  const [profileData, setProfileData] = useState({
   name: "",
@@ -158,15 +160,46 @@ const handleResumeUpload = async (e) => {
     });
   };
 
-  const handleSaveProfile = () => {
-    localStorage.setItem(
-      "candidateProfile",
-      JSON.stringify(profileData)
+  const handleSaveProfile = async () => {
+  setSaveError("");
+  setSaveSuccess("");
+
+  try {
+    const token = localStorage.getItem("token");
+
+    await api.post(
+      "/candidate/profile",
+      {
+        name:             profileData.name,
+        phone:            profileData.phone,
+        email:            profileData.email,
+        skills:           profileData.skills,
+        education:        profileData.education.map((edu) =>
+                            `${edu.degree} at ${edu.institution}, ${edu.location} (${edu.years}) - GPA: ${edu.gpa}`
+                          ),
+        experience:       profileData.experience.map((exp) =>
+                            `${exp.designation} at ${exp.company} (${exp.dates})`
+                          ),
+        projects:         profileData.projects.map((proj) =>
+                            `${proj.title} - ${proj.technologies.join(", ")}: ${proj.description}`
+                          ),
+        certifications:   profileData.certifications,
+        profileCompleted: true,
+      },
+      {
+        headers: { Authorization: `Bearer ${token}` },
+      }
     );
 
-    alert("Profile Saved Successfully!");
-  };
+    setSaveSuccess("Profile saved successfully!");
 
+  } catch (err) {
+    // This shows the exact message from backend
+    // "Email is already in use" or "Phone number is already in use"
+    const msg = err.response?.data?.message || "Failed to save profile.";
+    setSaveError(msg);
+  }
+};
   return (
     <div className="space-y-6">
 
@@ -648,16 +681,30 @@ const handleResumeUpload = async (e) => {
       </div>
 
       {/* Save Button */}
-      <div className="flex justify-end">
+<div className="flex flex-col items-end gap-3">
 
-        <button
-          onClick={handleSaveProfile}
-          className="px-6 py-3 bg-indigo-600 hover:bg-indigo-700 rounded-lg text-white font-medium"
-        >
-          Save Profile
-        </button>
+  {/* ✅ Success message */}
+  {saveSuccess && (
+    <div className="w-full p-3 bg-emerald-900/50 border border-emerald-600 text-emerald-300 rounded-lg text-sm">
+      {saveSuccess}
+    </div>
+  )}
 
-      </div>
+  {/* ❌ Error message from backend */}
+  {saveError && (
+    <div className="w-full p-3 bg-red-900/50 border border-red-600 text-red-300 rounded-lg text-sm">
+      {saveError}
+    </div>
+  )}
+
+  <button
+    onClick={handleSaveProfile}
+    className="px-6 py-3 bg-indigo-600 hover:bg-indigo-700 rounded-lg text-white font-medium"
+  >
+    Save Profile
+  </button>
+
+</div>
 
     </div>
   )

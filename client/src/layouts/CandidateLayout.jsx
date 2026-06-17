@@ -16,10 +16,6 @@ import { useState } from "react";
 import MyProfile from "../components/dashboard/candidate/MyProfile";
 import CandidateDashboard from "../components/dashboard/candidate/InterviewDashboard";
 
-// Add other page imports here as you build them
-// import ViewAIAnalysis from "../dashboard/candidate_dashboard/ViewAIAnalysis";
-// import InterviewHistory from "../dashboard/candidate_dashboard/InterviewHistory";
-// import PerformanceReports from "../dashboard/candidate_dashboard/PerformanceReports";
 
 const CandidateLayout = ({ onLogout, onDeleteAccount, user }) => {
   const [isProfileOpen, setIsProfileOpen] = useState(false);
@@ -31,10 +27,7 @@ const CandidateLayout = ({ onLogout, onDeleteAccount, user }) => {
   ];
 
   const interviewNavItems = [
-    // { name: "View AI Analysis", icon: Search },
-    { name: "Mock Interviews", icon: HelpCircle },
-    // { name: "Interview History", icon: History },
-    // { name: "Performance Reports", icon: BarChart3 },
+    { name: "Interviews", icon: HelpCircle },
   ];
 
   // ─────────────────────────────────────────────
@@ -44,18 +37,11 @@ const CandidateLayout = ({ onLogout, onDeleteAccount, user }) => {
     switch (activeItem) {
       case "AI Resume Analysis":
         return <MyProfile user={user} />;
-      case "Mock Interviews":
+      case "Interviews":
         return <CandidateDashboard />;
       case "My Profile":
         return <MyProfile user={user} />;
 
-      // Uncomment as you build these pages:
-      // case "View AI Analysis":
-      //   return <ViewAIAnalysis />;
-      // case "Interview History":
-      //   return <InterviewHistory />;
-      // case "Performance Reports":
-      //   return <PerformanceReports />;
 
       default:
         return (

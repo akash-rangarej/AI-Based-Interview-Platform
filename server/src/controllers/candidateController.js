@@ -219,65 +219,75 @@ try {
 };
 
 
-const saveProfile = async(req,res)=>{
+const saveProfile = async (req, res) => {
+  try {
+    const {
+      name,
+      phone,
+      email,
+      skills,
+      education,
+      projects,
+      experience,
+      certifications,
+    } = req.body;
 
-    try{
+    // Check if email is already taken by another user
+    if (email) {
+      const emailExists = await User.findOne({
+        email,
+        _id: { $ne: req.user.id }, // $ne = not equal — exclude current user
+      });
 
-        const {
-
-            name,
-            phone,
-            email,
-            skills,
-            education,
-            projects,
-            experience,
-            certifications
-
-        } = req.body;
-
-        const user =
-        await User.findByIdAndUpdate(
-
-            req.user.id,
-
-            {
-
-                name,
-                phone,
-                email,
-                skills,
-                education,
-                projects,
-                experience,
-                certifications,
-
-                profileCompleted:true
-
-            },
-
-            {new:true}
-
-        );
-
-        res.status(200).json({
-
-            success:true,
-
-            message:"Profile saved",
-
-            user
-
-        });
-
-    }catch(error){
-
-        res.status(500).json({
-            message:error.message
-        });
-
+      if (emailExists) {
+        return res.status(400).json({ message: "Email is already in use by another account." });
+      }
     }
 
+    // Check if phone is already taken by another user
+    if (phone) {
+  const last10 = phone.replace(/\D/g, "").slice(-10); // strip non-digits, take last 10
+
+  const allUsers = await User.find({
+    ph_no: { $exists: true, $ne: null },
+    _id:   { $ne: req.user.id },
+  }).select("ph_no");
+
+  const phoneExists = allUsers.some((u) => {
+    const existing = u.ph_no?.replace(/\D/g, "").slice(-10);
+    return existing === last10;
+  });
+
+  if (phoneExists) {
+    return res.status(400).json({ message: "Phone number is already in use by another account." });
+  }
+}
+
+    const user = await User.findByIdAndUpdate(
+      req.user.id,
+      {
+        name,
+        ph_no:    phone, // ← match your schema field name
+        email,
+        skills,
+        education,
+        projects,
+        experience,
+        certifications,
+        profileCompleted: true,
+      },
+      { new: true }
+    );
+
+    res.status(200).json({
+      success: true,
+      message: "Profile saved",
+      user,
+    });
+
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
 };
 
 

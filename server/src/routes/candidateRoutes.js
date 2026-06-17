@@ -11,6 +11,7 @@ require("../controllers/candidateController");
 
 const authMiddleware =
 require("../middlewares/authMiddleware");
+const roleMiddleware = require("../middlewares/roleMiddleware");
 
 
 router.post(
@@ -39,22 +40,14 @@ router.get(
     "/profile",
 
     authMiddleware,
-
     candidateController.getProfile
 
 );
 
-
-// router.post(
-//   "/multer-test",
-//   upload.single("resume"),
-//   (req, res) => {
-//     console.log("FILE:", req.file);
-
-//     res.json({
-//       file: req.file
-//     });
-//   }
-// );
+// router.put(
+//     "/update-profile",
+//     authMiddleware,
+//     candidateController.saveProfile
+// )
 
 module.exports = router;

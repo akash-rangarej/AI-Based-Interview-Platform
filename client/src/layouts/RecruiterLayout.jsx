@@ -8,10 +8,12 @@ import {
   Settings,
   User,
   X,
+  FileText,
 } from "lucide-react";
 import { useState } from "react";
 import PostInterview from "../components/dashboard/recruiter/Post_interview";
 import SearchCandidates from "../components/dashboard/recruiter/SearchCandidates";
+import RecruiterDashboard from "../components/dashboard/recruiter/Rec_InterviewDashboard";
 
 const RecruiterLayout = ({ children, onLogout,  onDeleteAccount ,user }) => {
   const [isProfileOpen, setIsProfileOpen] = useState(false);
@@ -20,8 +22,9 @@ const RecruiterLayout = ({ children, onLogout,  onDeleteAccount ,user }) => {
 
   const recruiterNavItems = [
     { name: "Search Candidates", icon: Search },
+    {name: "AI interview setup", icon: Settings},
     { name: "Performance Reports", icon: BarChart3 },
-    {name: "AI interview setup", icon: Settings}
+      { name: "My Posts", icon: FileText },
   ];
 const renderContent = () => {
   switch (activeItem) {
@@ -33,6 +36,9 @@ const renderContent = () => {
 
     case "AI interview setup":
       return <PostInterview />;
+
+       case "My Posts":
+        return <RecruiterDashboard />;
 
     default:
       return <div>Select a section</div>;

@@ -1,112 +1,60 @@
-import React, { useState } from "react";
-
-const dummyCandidates = [
-  {
-    name: "Aarav Sharma",
-    email: "aarav@gmail.com",
-    skills: ["React", "Node", "MongoDB"],
-    experience: 2,
-    interviewScore: 82,
-    position: "Frontend Developer",
-  },
-  {
-    name: "Neha Verma",
-    email: "neha@gmail.com",
-    skills: ["Python", "ML", "Pandas"],
-    experience: 3,
-    interviewScore: 90,
-    position: "Data Analyst",
-  },
-  {
-    name: "Rohit Singh",
-    email: "rohit@gmail.com",
-    skills: ["Java", "Spring", "SQL"],
-    experience: 4,
-    interviewScore: 75,
-    position: "Backend Developer",
-  },
-  {
-    name: "Priya Nair",
-    email: "priya@gmail.com",
-    skills: ["UI/UX", "Figma", "Design"],
-    experience: 2,
-    interviewScore: 88,
-    position: "UI Designer",
-  },
-   {
-    name: "Gaurang Sharma",
-    email: "gaurangsharma@gmail.com",
-    skills: ["UI/UX", "Figma", "Design"],
-    experience: 2,
-    interviewScore: 90,
-    position: "UI Designer",
-  },
-   {
-    name: "Ankur Sharma",
-    email: "ankur@gmail.com",
-    skills: ["project management", "Design"],   
-    experience: 2,
-    interviewScore: 34,
-    position: "UI Designer",
-  },
-   {
-    name: "Rishika Singh",
-    email: "rishika@gmail.com",
-    skills: ["Data Science", "Python", "Flask"],
-    experience: 2,
-    interviewScore: 68,
-    position: "UI Designer",
-  },
-   {
-    name: "Aakash Rangrez",
-    email: "aakash@gmail.com",
-    skills: ["UI/UX", "Marketing", "Design"],
-    experience: 2,
-    interviewScore: 95,
-    position: "UI Designer",
-  },
-];
+import React, { useEffect, useState } from "react";
+import api from "../../../api/axiosClient";
 
 const SearchCandidates = () => {
-  const [filters, setFilters] = useState({
-    name: "",
-    skill: "",
-    position: "",
-    minScore: "",
+  const [allCandidates, setAllCandidates] = useState([]); // original list from API
+  const [results, setResults]             = useState([]);
+  const [loading, setLoading]             = useState(true);
+  const [error, setError]                 = useState("");
+  const [filters, setFilters]             = useState({
+    name:     "",
+    skill:    "",
+    minExp:   "",
   });
 
-  const [results, setResults] = useState(dummyCandidates);
+  // Fetch all candidates once on mount
+  useEffect(() => {
+    const fetchCandidates = async () => {
+      try {
+        const { data } = await api.get("/users/candidates", {
+          headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
+        });
+        setAllCandidates(data.candidates || []);
+        setResults(data.candidates || []);
+      } catch (err) {
+        const msg = err.response?.data?.message || "Failed to load candidates.";
+        setError(msg);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchCandidates();
+  }, []);
 
   const handleChange = (e) => {
     setFilters({ ...filters, [e.target.name]: e.target.value });
   };
 
   const handleSearch = () => {
-    let filtered = dummyCandidates;
+    let filtered = allCandidates;
 
     if (filters.name) {
       filtered = filtered.filter((c) =>
-        c.name.toLowerCase().includes(filters.name.toLowerCase())
+        c.name?.toLowerCase().includes(filters.name.toLowerCase())
       );
     }
 
     if (filters.skill) {
       filtered = filtered.filter((c) =>
-        c.skills.some((s) =>
+        c.skills?.some((s) =>
           s.toLowerCase().includes(filters.skill.toLowerCase())
         )
       );
     }
 
-    if (filters.position) {
-      filtered = filtered.filter((c) =>
-        c.position.toLowerCase().includes(filters.position.toLowerCase())
-      );
-    }
-
-    if (filters.minScore) {
+    if (filters.minExp) {
       filtered = filtered.filter(
-        (c) => c.interviewScore >= Number(filters.minScore)
+        (c) => (c.experience?.length || 0) >= Number(filters.minExp)
       );
     }
 
@@ -114,23 +62,38 @@ const SearchCandidates = () => {
   };
 
   const handleReset = () => {
-    setFilters({
-      name: "",
-      skill: "",
-      position: "",
-      minScore: "",
-    });
-    setResults(dummyCandidates);
+    setFilters({ name: "", skill: "", minExp: "" });
+    setResults(allCandidates);
   };
 
-  return (
-     <div className="max-w-4xl mx-auto text-white">
-      <h1 className="text-2xl font-bold mb-6">
-        🔎 Search Candidates Dashboard
-      </h1>
+  if (loading) {
+    return (
+      <div className="flex justify-center items-center h-48 text-slate-400">
+        Loading candidates...
+      </div>
+    );
+  }
 
-      {/* FILTER BOX */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-3 bg-slate-900 p-4 rounded-xl">
+  if (error) {
+    return (
+      <div className="flex flex-col items-center justify-center h-48 gap-3">
+        <div className="text-red-400 text-center">{error}</div>
+        <button
+          onClick={() => window.location.reload()}
+          className="text-sm bg-slate-700 hover:bg-slate-600 text-white px-4 py-2 rounded-lg"
+        >
+          Retry
+        </button>
+      </div>
+    );
+  }
+
+  return (
+    <div className="max-w-4xl mx-auto text-white">
+      <h1 className="text-2xl font-bold mb-6">🔎 Search Candidates</h1>
+
+      {/* Filters */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-3 bg-slate-900 p-4 rounded-xl">
         <input
           name="name"
           value={filters.name}
@@ -138,34 +101,24 @@ const SearchCandidates = () => {
           placeholder="Search by name"
           className="p-2 bg-slate-800 rounded outline-none"
         />
-
         <input
           name="skill"
           value={filters.skill}
           onChange={handleChange}
-          placeholder="Search skill (React, Python)"
+          placeholder="Search by skill (React, Python...)"
           className="p-2 bg-slate-800 rounded outline-none"
         />
-
         <input
-          name="position"
-          value={filters.position}
+          name="minExp"
+          value={filters.minExp}
           onChange={handleChange}
-          placeholder="Position"
-          className="p-2 bg-slate-800 rounded outline-none"
-        />
-
-        <input
-          name="minScore"
-          value={filters.minScore}
-          onChange={handleChange}
-          placeholder="Min Score"
+          placeholder="Min experiences count"
           type="number"
           className="p-2 bg-slate-800 rounded outline-none"
         />
       </div>
 
-      {/* BUTTONS */}
+      {/* Buttons */}
       <div className="flex gap-3 mt-4">
         <button
           onClick={handleSearch}
@@ -173,7 +126,6 @@ const SearchCandidates = () => {
         >
           Search
         </button>
-
         <button
           onClick={handleReset}
           className="bg-gray-600 px-4 py-2 rounded hover:bg-gray-700"
@@ -182,35 +134,70 @@ const SearchCandidates = () => {
         </button>
       </div>
 
-      {/* RESULTS */}
-      <div className="mt-6 grid md:grid-cols-2 gap-4">
+      {/* Total count */}
+      <p className="text-slate-400 text-sm mt-4">
+        Showing {results.length} of {allCandidates.length} candidates
+      </p>
+
+      {/* Results */}
+      <div className="mt-4 grid md:grid-cols-2 gap-4">
         {results.length === 0 ? (
-          <p className="text-gray-400">No candidates found</p>
+          <p className="text-gray-400">No candidates found.</p>
         ) : (
           results.map((c, i) => (
             <div
-              key={i}
+              key={c._id || i}
               className="bg-slate-900 p-4 rounded-xl border border-slate-700"
             >
-              <h2 className="text-lg font-semibold">{c.name}</h2>
-              <p className="text-sm text-gray-400">{c.email}</p>
+              {/* Name + profile badge */}
+              <div className="flex items-center justify-between mb-1">
+                <h2 className="text-lg font-semibold">{c.name || "N/A"}</h2>
+                {c.profileCompleted && (
+                  <span className="text-xs bg-emerald-900 text-emerald-300 px-2 py-0.5 rounded-full">
+                    Profile Complete
+                  </span>
+                )}
+              </div>
 
-              <p className="mt-2">
-                <b>Position:</b> {c.position}
-              </p>
+              <p className="text-sm text-gray-400 mb-2">{c.email}</p>
 
-              <p>
-                <b>Experience:</b> {c.experience} years
-              </p>
+              {/* Skills */}
+              {c.skills?.length > 0 && (
+                <div className="flex flex-wrap gap-1 mb-2">
+                  {c.skills.map((skill, j) => (
+                    <span
+                      key={j}
+                      className="text-xs bg-slate-700 text-slate-300 px-2 py-0.5 rounded-full"
+                    >
+                      {skill}
+                    </span>
+                  ))}
+                </div>
+              )}
 
-              <p>
-                <b>Score:</b>{" "}
-                <span className="text-green-400">{c.interviewScore}</span>
-              </p>
+              {/* Experience */}
+              {c.experience?.length > 0 && (
+                <div className="mb-2">
+                  <p className="text-sm font-medium mb-1">Experience:</p>
+                  <ul className="text-sm text-slate-400 list-disc list-inside">
+                    {c.experience.map((exp, j) => (
+                      <li key={j}>{exp}</li>
+                    ))}
+                  </ul>
+                </div>
+              )}
 
-              <p className="mt-1">
-                <b>Skills:</b> {c.skills.join(", ")}
-              </p>
+              {/* Education */}
+              {c.education?.length > 0 && (
+                <div>
+                  <p className="text-sm font-medium mb-1">Education:</p>
+                  <ul className="text-sm text-slate-400 list-disc list-inside">
+                    {c.education.map((edu, j) => (
+                      <li key={j}>{edu}</li>
+                    ))}
+                  </ul>
+                </div>
+              )}
             </div>
           ))
         )}

@@ -1,3 +1,4 @@
+const interviewpost = require("../models/interviewpost");
 const InterviewPost = require("../models/interviewpost");
 const User = require("../models/User");
 
@@ -63,23 +64,28 @@ const createInterviewPost = async (req, res) => {
 // ─────────────────────────────────────────────
 const getDashboardPosts = async (req, res) => {
   try {
-    // Step 1 — get email from DB using id from token
-    const user = await User.findById(req.user.id).select("email");
+    const user = await User.findById(req.user.id).select("email role");
 
     if (!user) {
       return res.status(404).json({ message: "User not found." });
     }
 
-    // Step 2 — use that email to filter posts
-    const posts = await InterviewPost.find({
-      status: "active",
-      expiresAt: { $gt: new Date() },
-      candidateEmail: user.email,
-    })
-      .select("roundName role skills candidateType minExperience maxExperience difficulty numberOfQuestions expiresAt")
+    let query = { status: "active", expiresAt: { $gt: new Date() } };
+    let fields = "roundName role skills candidateType minExperience maxExperience expiresAt status";
+
+    // Add role-specific filters
+    if (user.role === "candidate") {
+      query.candidateEmail = user.email;
+    } else if (user.role === "recruiter") {
+      fields += " difficulty numberOfQuestions candidateEmail";
+    } else {
+      return res.status(403).json({ message: "Access denied." });
+    }
+
+    const posts = await InterviewPost.find(query)
+      .select(fields)
       .sort({ createdAt: -1 });
 
-    console.log("the fetched data from db:", posts);
     return res.status(200).json({ posts });
 
   } catch (err) {
@@ -87,7 +93,6 @@ const getDashboardPosts = async (req, res) => {
     res.status(500).json({ message: "Server error." });
   }
 };
-
 // ─────────────────────────────────────────────
 // GET /api/interviews/:postId
 // Candidate fetches full post before starting interview
@@ -115,30 +120,6 @@ const getInterviewPostById = async (req, res) => {
   }
 };
 
-// ─────────────────────────────────────────────
-// PATCH /api/interviews/:postId/cancel
-// Recruiter cancels a post early
-// ─────────────────────────────────────────────
-const cancelInterviewPost = async (req, res) => {
-  try {
-    const post = await InterviewPost.findOne({
-      _id: req.params.postId,
-      postedBy: req.user.id,
-    });
-
-    if (!post) {
-      return res.status(404).json({ message: "Post not found." });
-    }
-
-    post.status = "cancelled";
-    await post.save();
-
-    res.status(200).json({ message: "Interview post cancelled." });
-  } catch (err) {
-    console.error("cancelInterviewPost error:", err);
-    res.status(500).json({ message: "Server error." });
-  }
-};
 
 // Call this when candidate completes the interview
 const completeInterviewPost = async (req, res) => {
@@ -160,10 +141,20 @@ const completeInterviewPost = async (req, res) => {
   }
 };
 
+// delete post by the recruiter
+const deleteInterviewPost = async (req, res) => {
+  try {
+    await InterviewPost.findOneAndDelete({ _id: req.params.postId, postedBy: req.user.id });
+    res.status(200).json({ message: "Post deleted." });
+  } catch (err) {
+    res.status(500).json({ message: "Server error." });
+  }
+};
+
 module.exports = {
   createInterviewPost,
   getDashboardPosts,
   getInterviewPostById,
-  cancelInterviewPost,
-  completeInterviewPost
+  completeInterviewPost,
+  deleteInterviewPost
 };

@@ -30,6 +30,11 @@ const createInterviewPost = async (req, res) => {
     const skillsArray = skills
       ? skills.split(",").map((s) => s.trim()).filter(Boolean)
       : [];
+    const user = await User.find({role:"candidate",email:Email})
+
+    if (!user){
+      return res.status(403).json({message:"invalid user or user does not exist."});
+    }
 
     const post = await InterviewPost.create({
       roundName,
@@ -43,11 +48,11 @@ const createInterviewPost = async (req, res) => {
       numberOfQuestions: Number(questions) || 10,
       followUps,
       adaptive,
-      candidateEmail: Email || null,
+      candidateEmail: Email,
       postedBy: req.user.id,
     });
 
-    res.status(201).json({
+    return res.status(201).json({
       message: "Interview posted successfully.",
       postId: post._id,
       expiresAt: post.expiresAt,
@@ -62,7 +67,7 @@ const createInterviewPost = async (req, res) => {
 // GET /api/interviews/dashboard
 // Candidate sees all active posts meant for them
 // ─────────────────────────────────────────────
-const getDashboardPosts = async (req, res) => {
+const Can_getDashboardPosts = async (req, res) => {
   try {
     const user = await User.findById(req.user.id).select("email role");
 
@@ -73,14 +78,7 @@ const getDashboardPosts = async (req, res) => {
     let query = { status: "active", expiresAt: { $gt: new Date() } };
     let fields = "roundName role skills candidateType minExperience maxExperience expiresAt status";
 
-    // Add role-specific filters
-    if (user.role === "candidate") {
       query.candidateEmail = user.email;
-    } else if (user.role === "recruiter") {
-      fields += " difficulty numberOfQuestions candidateEmail";
-    } else {
-      return res.status(403).json({ message: "Access denied." });
-    }
 
     const posts = await InterviewPost.find(query)
       .select(fields)
@@ -89,10 +87,33 @@ const getDashboardPosts = async (req, res) => {
     return res.status(200).json({ posts });
 
   } catch (err) {
-    console.error("getDashboardPosts error:", err);
+    console.error(" candidate getDashboardPosts error:", err);
     res.status(500).json({ message: "Server error." });
   }
 };
+
+
+const Rec_getDashboardPosts = async (req,res) =>{
+  try {
+    const user = await User.findById(req.user.id).select("email role");
+
+    if (!user) {
+      return res.status(404).json({ message: "User not found." });
+    }
+  let query = { postedBy: req.user.id, status: "active", expiresAt: { $gt: new Date() } };
+    let fields = "roundName role skills candidateType minExperience maxExperience expiresAt status difficulty numberOfQuestions candidateEmail"
+
+const posts = await InterviewPost.find(query)
+      .select(fields)
+      .sort({ createdAt: -1 });
+
+    return res.status(200).json({ posts });
+}
+catch(err){
+ console.error(" recruiter getDashboardPosts error:", err);
+    res.status(500).json({ message: "Server error." });
+}
+}
 // ─────────────────────────────────────────────
 // GET /api/interviews/:postId
 // Candidate fetches full post before starting interview
@@ -131,7 +152,7 @@ const completeInterviewPost = async (req, res) => {
     }
 
     post.status = "completed";
-    post.expiresAt = undefined; // ← removes the field → TTL ignores this document now
+    post.expiresAt = undefined; 
     await post.save();
 
     res.status(200).json({ message: "Interview marked as completed." });
@@ -140,6 +161,7 @@ const completeInterviewPost = async (req, res) => {
     res.status(500).json({ message: "Server error." });
   }
 };
+
 
 // delete post by the recruiter
 const deleteInterviewPost = async (req, res) => {
@@ -151,9 +173,11 @@ const deleteInterviewPost = async (req, res) => {
   }
 };
 
+
 module.exports = {
   createInterviewPost,
-  getDashboardPosts,
+  Can_getDashboardPosts,
+  Rec_getDashboardPosts,
   getInterviewPostById,
   completeInterviewPost,
   deleteInterviewPost

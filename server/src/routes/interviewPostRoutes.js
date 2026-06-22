@@ -3,7 +3,8 @@ const router  = express.Router();
 
 const {
   createInterviewPost,
-  getDashboardPosts,
+  Can_getDashboardPosts,
+  Rec_getDashboardPosts,
   getInterviewPostById,
   cancelInterviewPost,
   completeInterviewPost,
@@ -17,10 +18,10 @@ const roleMiddleware = require("../middlewares/roleMiddleware");
 router.post("/post", authMiddleware, roleMiddleware("recruiter"), createInterviewPost);
 
 // Candidate — see all available interviews on dashboard
-router.get("/dashboard", authMiddleware, roleMiddleware("candidate"), getDashboardPosts);
+router.get("/dashboard", authMiddleware, roleMiddleware("candidate"), Can_getDashboardPosts);
 
 // Recruiter — see all available interviews on dashboard
-router.get("/my-posts", authMiddleware, roleMiddleware("recruiter"), getDashboardPosts);
+router.get("/my-posts", authMiddleware, roleMiddleware("recruiter"), Rec_getDashboardPosts);
 
 // Candidate — get full details of one interview before attending
 router.get("/:postId", authMiddleware, roleMiddleware("candidate"), getInterviewPostById);

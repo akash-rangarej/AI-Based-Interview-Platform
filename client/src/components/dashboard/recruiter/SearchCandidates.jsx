@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import api from "../../../api/axiosClient";
 
 const SearchCandidates = () => {
-  const [allCandidates, setAllCandidates] = useState([]); // original list from API
+  const [allCandidates, setAllCandidates] = useState([]);
   const [results, setResults]             = useState([]);
   const [loading, setLoading]             = useState(true);
   const [error, setError]                 = useState("");
@@ -160,6 +160,7 @@ const SearchCandidates = () => {
               </div>
 
               <p className="text-sm text-gray-400 mb-2">{c.email}</p>
+              <p className="text-sm text-gray-400 mb-2">{c.ph_no}</p>
 
               {/* Skills */}
               {c.skills?.length > 0 && (

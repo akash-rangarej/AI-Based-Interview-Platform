@@ -1,5 +1,5 @@
 import { FileText, Trash2, UploadCloud } from "lucide-react";
-import { useState } from "react";
+import { useState,useEffect } from "react";
 import api from "../../../api/axiosClient";
 
 const MyProfile = ({ user }) => {
@@ -44,6 +44,88 @@ const [saveSuccess, setSaveSuccess] = useState("");
 
   certifications: [],
 });
+
+useEffect(() => {
+
+  const fetchProfile = async () => {
+
+    try {
+
+      const token =
+        localStorage.getItem("token");
+
+      const response =
+        await api.get(
+          "/candidate/profile",
+          {
+            headers: {
+              Authorization:
+                `Bearer ${token}`
+            }
+          }
+        );
+
+      const user = response.data.Profile;
+
+      setProfileData({
+
+        name: user.name || "",
+
+        phone: user.phone || "",
+
+        email: user.email || "",
+
+        skills: user.skills || [],
+
+        education:
+          user.education?.length > 0
+            ? user.education
+            : [{
+                institution:"",
+                degree:"",
+                years:"",
+                location:"",
+                gpa:""
+              }],
+
+        experience:
+          user.experience?.length > 0
+            ? user.experience
+            : [{
+                designation:"",
+                company:"",
+                dates:"",
+                description:[]
+              }],
+
+        projects:
+          user.projects?.length > 0
+            ? user.projects
+            : [{
+                title:"",
+                technologies:[],
+                description:""
+              }],
+
+        certifications:
+          user.certifications || []
+
+      });
+
+    } catch (error) {
+
+      console.error(
+        "Profile fetch error:",
+        error
+      );
+
+    }
+
+  };
+
+  fetchProfile();
+
+}, []);
 
 const formatArrayForInput = (value) => {
   if (Array.isArray(value)) {

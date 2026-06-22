@@ -312,7 +312,10 @@ const getProfile = async(req,res)=>{
         await User.findById(req.user.id)
         .select("-password");
 
-        res.status(200).json(user);
+        res.status(200).json({
+    success:true,
+    profile:user
+});
 
     }catch(error){
 

@@ -9,7 +9,7 @@ import MyProfile from "../components/dashboard/candidate/MyProfile";
 import CandidateDashboard from "../components/dashboard/candidate/InterviewDashboard";
 import InstructionPage from "../components/dashboard/candidate/Instruction"; 
 import InterviewScreen from "../components/dashboard/candidate/InterviewScreen";
-
+import ViewProfile from "../components/dashboard/candidate/ViewProfile";
 
 const CandidateLayout = ({ onLogout, user }) => {
   const [isProfileOpen,  setIsProfileOpen]  = useState(false);
@@ -30,25 +30,8 @@ const [resultInterviewId, setResultInterviewId] = useState(null);
       case "Interviews":
   if (activeInterviewId) {
     return <InterviewScreen
-  interviewId={activeInterviewId}
-  // onFinish={(interviewId) => {
-  //   setResultInterviewId(interviewId);
-  //   setActiveInterviewId(null);
-  // }}
-/>;
-  }
-//   if (resultInterviewId) {
-//   return (
-//     <InterviewResult
-//       interviewId={resultInterviewId}
-//       onBack={() => {
-//         setResultInterviewId(null);
-//         setActiveInterviewId(null);
-//         setSelectedPost(null);
-//       }}
-//     />
-//   );
-// }
+  interviewId={activeInterviewId}/>;}
+
   if (selectedPost) {
     return (
       <InstructionPage
@@ -61,7 +44,16 @@ const [resultInterviewId, setResultInterviewId] = useState(null);
   return <CandidateDashboard onAttend={(post) => setSelectedPost(post)} />;
 
       case "My Profile":
-        return <MyProfile user={user} />;
+  return (
+    <ViewProfile
+      user={user}
+      onEdit={() =>
+        setActiveItem(
+          "AI Resume Analysis"
+        )
+      }
+    />
+  );
 
       default:
         return (
@@ -120,9 +112,6 @@ const [resultInterviewId, setResultInterviewId] = useState(null);
                 className="w-full flex items-center gap-3 px-4 py-2 text-sm text-slate-200 hover:bg-slate-800/60 hover:text-white transition-colors"
               >
                 <User className="w-4 h-4" /> My Profile
-              </button>
-              <button className="w-full flex items-center gap-3 px-4 py-2 text-sm text-slate-300 hover:bg-slate-800/50">
-                <Settings className="w-4 h-4" /> Settings
               </button>
               <hr className="border-slate-800 my-2" />
               <button

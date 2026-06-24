@@ -10,6 +10,7 @@ const candidateRoutes = require('./src/routes/candidateRoutes')
 const interviewPostRoutes = require("./src/routes/interviewPostRoutes")
 const userRoutes = require("./src/routes/recruiterRoutes")
 const interviewRoutes = require("./src/routes/interviewRoutes")
+const adminRoutes = require("./src/routes/adminRoutes");
 connectDB();
 
 app.use(cors({
@@ -23,6 +24,7 @@ app.use("/api/recruiter",recuiterRoutes)
 app.use("/api/interview-posts", interviewPostRoutes);
 app.use("/api/users", userRoutes);
 app.use("/api/interview",interviewRoutes)
+app.use("/api/admin", adminRoutes);
 
 app.listen(5000, () => {
     console.log(`Server running on port 5000`);

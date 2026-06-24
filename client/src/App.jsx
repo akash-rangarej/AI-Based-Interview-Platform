@@ -5,6 +5,7 @@ import ForgotPassword from "./components/Auth/ForgotPassword";
 import Login from "./components/Auth/Login";
 import RegistrationPage from "./components/Auth/registration_page";
 import ResetPassword from "./components/Auth/ResetPassword";
+import AdminDashboard from "./layouts/AdminLayout";
 import CandidateLayout from "./layouts/CandidateLayout";
 import MyProfile from "./components/dashboard/candidate/MyProfile";
 import RecruiterLayout from "./layouts/RecruiterLayout";
@@ -99,6 +100,17 @@ function App() {
       </RecruiterLayout>
     );
   }
+
+  if (page === "admin-portal") {
+  return (
+    <div className="min-h-screen bg-slate-950">
+      <AdminDashboard
+        user={currentUser}
+        onLogout={handleLogout}
+      />
+    </div>
+  );
+}
 
   if (page === "candidate-portal") {
     return (

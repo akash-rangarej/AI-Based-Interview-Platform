@@ -68,7 +68,8 @@ const registerUser = async (req, res) => {
     try {
 
         const { name, email, ph_no, password, role } = req.body;
-
+       
+       
         if (!name || !email || !ph_no || !password || !role) {
             return res.status(400).json({
                 message: "Name, email, phone number, password and role are required"
@@ -89,6 +90,12 @@ const registerUser = async (req, res) => {
                 message: "User already exists with this email or phone number"
             });
         }
+
+          if (role === "admin") {
+                return res.status(403).json({
+                    message: "Admin registration is not allowed"
+                });
+            }
 
 
         const hashedPassword =
@@ -121,17 +128,44 @@ const registerUser = async (req, res) => {
     }
 };
 
+
+
 // login
 const loginUser = async (req, res) => {
     try {
         const { email, password } = req.body;
 
-        if (!email || !password) {
-            return res.status(400).json({
-                message: "Email and password are required"
+        console.log("Received Email:", email);
+        console.log("ADMIN_EMAIL:", process.env.ADMIN_EMAIL);
+        console.log("Received Password:", password);
+        console.log("Password Match:", password === process.env.ADMIN_PASSWORD);
+
+        if (
+            email === process.env.ADMIN_EMAIL &&
+            password === process.env.ADMIN_PASSWORD
+        ) {
+            const adminToken = jwt.sign(
+                {
+                    id: "admin",
+                    role: "admin"
+                },
+                process.env.JWT_SECRET,
+                { expiresIn: "7d" }
+            );
+
+            return res.status(200).json({
+                message: "Admin logged in successfully",
+                token: adminToken,
+                user: {
+                    id: "admin",
+                    name: "Administrator",
+                    email: process.env.ADMIN_EMAIL,
+                    role: "admin"
+                }
             });
         }
 
+        // Existing login code continues here
         const normalizedEmail = email.toLowerCase().trim();
 
         const user = await User.findOne({

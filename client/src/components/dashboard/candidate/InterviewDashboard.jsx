@@ -40,8 +40,10 @@ const CandidateDashboard = ({onAttend}) => {
         // ─────────────────────────────────────────────
 
         const { data } = await api.get("/interview-posts/dashboard", {
+    
           headers: { Authorization: `Bearer ${token}` },
         });
+        console.log("data",data)
 
         setPosts(data.posts || []);
       } catch (err) {

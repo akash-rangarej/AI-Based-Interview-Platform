@@ -16,7 +16,6 @@ import { useState } from "react";
 import AdminDashboard from "../components/dashboard/admin/AIUsageAnalytics";
 import CandidatesTable from "../components/dashboard/admin/CandidatesTable";
 import RecruitersTable from "../components/dashboard/admin/RecruitersTable";
-import ChangeAdminPassword from "../components/dashboard/admin/ChangeAdminPassword";
 
 const AdminLayout = ({ user, onLogout }) => {
   const [isProfileOpen, setIsProfileOpen] = useState(false);
@@ -35,10 +34,6 @@ const AdminLayout = ({ user, onLogout }) => {
       name: "Recruiters",
       icon: Building2,
     },
-    {
-      name: "Change Password",
-      icon: KeyRound,
-    },
   ];
 
   const renderPage = () => {
@@ -51,9 +46,6 @@ const AdminLayout = ({ user, onLogout }) => {
 
       case "Recruiters":
         return <RecruitersTable />;
-
-      case "Change Password":
-        return <ChangeAdminPassword />;
 
       default:
         return (

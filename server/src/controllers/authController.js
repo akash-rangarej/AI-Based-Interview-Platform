@@ -67,12 +67,12 @@ const formatUserResponse = (user) => {
 const registerUser = async (req, res) => {
     try {
 
-        const { name, email, ph_no, password, role } = req.body;
+        const { name, email, ph_no, password } = req.body;
        
        
         if (!name || !email || !ph_no || !password || !role) {
             return res.status(400).json({
-                message: "Name, email, phone number, password and role are required"
+                message: "Name, email, phone number and password are required"
             });
         }
 
@@ -91,11 +91,11 @@ const registerUser = async (req, res) => {
             });
         }
 
-          if (role === "admin") {
-                return res.status(403).json({
-                    message: "Admin registration is not allowed"
-                });
-            }
+        //   if (role === "admin") {
+        //         return res.status(403).json({
+        //             message: "Admin registration is not allowed"
+        //         });
+        //     }
 
 
         const hashedPassword =
@@ -106,13 +106,7 @@ const registerUser = async (req, res) => {
             email: normalizedEmail,
             ph_no: ph_no.trim(),
             password: hashedPassword,
-            role: role.trim(),
-            profile_photo: req.file
-                ? {
-                    data: req.file.buffer,
-                    contentType: req.file.mimetype
-                }
-                : undefined
+            role: "candidate",
         });
 
         res.status(201).json({

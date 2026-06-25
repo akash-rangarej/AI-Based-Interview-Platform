@@ -8,7 +8,6 @@ function RegistrationPage({ onBackToLogin, onRegisterUser }) {
     name: "",
     email: "",
     password: "",
-    role: "candidate",
     phone:"",
   });
   const [message, setMessage] = useState("");
@@ -34,7 +33,6 @@ function RegistrationPage({ onBackToLogin, onRegisterUser }) {
       name: formData.name,
       email: formData.email,
       password: formData.password,
-      role: formData.role,
       ph_no: phoneNumber,
     };
 
@@ -118,7 +116,7 @@ function RegistrationPage({ onBackToLogin, onRegisterUser }) {
 
       
 
-          <div className="input-group">
+          {/* <div className="input-group">
             <select
               name="role"
               value={formData.role}
@@ -129,7 +127,7 @@ function RegistrationPage({ onBackToLogin, onRegisterUser }) {
               <option value="recruiter">Recruiter</option>
               <option value="admin">Admin</option>
             </select>
-          </div>
+          </div> */}
 
           {message && <p className="form-message">{message}</p>}
 

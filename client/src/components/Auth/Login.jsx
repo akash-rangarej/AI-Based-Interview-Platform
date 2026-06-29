@@ -1,11 +1,13 @@
 import { useState } from "react";
 import api, { getErrorMessage } from "../../api/axiosClient";
+import { useAuthContext } from "../../context/AuthContext";
 
 function Login({ onForgotPasswordClick, onLoginSuccess, onRegisterClick }) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [message, setMessage] = useState("");
   const [loading, setLoading] = useState(false);
+
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -18,10 +20,11 @@ function Login({ onForgotPasswordClick, onLoginSuccess, onRegisterClick }) {
         password,
       });
 
-      if (response.data?.token) {
-        localStorage.setItem("token", response.data.token);
-      }
+      // if (response.data?.token) {
+      //   localStorage.setItem("token", response.data.token);
+      // }
 
+  
       setMessage(response.data?.message || "Login successful.");
       console.log("Login response:", response.data);
       onLoginSuccess(response.data?.user);

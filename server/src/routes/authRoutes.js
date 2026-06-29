@@ -7,7 +7,8 @@ const {
     loginUser,
     forgotPassword,
     resetPassword,
-    verifyOtp
+    verifyOtp,
+    logoutUser
 } = require("../controllers/authController");
 
 const upload = multer({
@@ -26,6 +27,7 @@ const upload = multer({
 
 router.post("/register", upload.single("profilePhoto"), registerUser);
 router.post("/login", loginUser);
+router.post("/logout", logoutUser);
 router.post("/forgot-password", forgotPassword);
 router.post("/verify-otp", verifyOtp);
 router.post("/reset-password", resetPassword);

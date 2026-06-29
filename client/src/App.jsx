@@ -81,13 +81,25 @@ function App() {
     else                           setPage("login");
   };
 
-  const handleLogout = () => {
-    localStorage.removeItem("token");
-    localStorage.removeItem(AUTH_USER_KEY);
-    setCurrentUser(null);
-    setPage("login");
-  };
+  // const handleLogout = () => {
+  //   localStorage.removeItem("token");
+  //   localStorage.removeItem(AUTH_USER_KEY);
+  //   setCurrentUser(null);
+  //   setPage("login");
+  // };
+const handleLogout = async () => {
+  try {
+    await api.post("/auth/logout");
+  } catch (error) {
+    console.error("Logout failed:", error);
+  }
 
+  localStorage.removeItem(AUTH_USER_KEY);
+
+  setCurrentUser(null);
+  setSelectedPost(null);
+  setPage("login");
+};
  
 
   if (page === "recruiter-portal") {

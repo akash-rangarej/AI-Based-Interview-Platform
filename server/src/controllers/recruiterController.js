@@ -19,9 +19,7 @@ const getCandidates = async (req, res) => {
 
 const getPerformance = async (req, res) => {
   try {
-
     const recruiterId = req.user.id;
-
     const results = await Result.find()
       .populate("candidateId", "name email")
       .populate({

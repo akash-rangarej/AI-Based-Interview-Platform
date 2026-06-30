@@ -10,6 +10,7 @@ const Tesseract = require("tesseract.js");
 const ai = require("../config/gemini");
 const cloudinary = require("../config/cloudinary")
 const OpenAI  = require("openai")
+const AIUsage = require("../models/AIUsage");
 
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
@@ -177,10 +178,7 @@ Resume Text:
 ${extractedText}
 `;
 
-// const response = await ai.models.generateContent({
-//     model: "gemini-2.5-flash",
-//     contents: prompt
-// });
+
 
       const response = await openai.chat.completions.create({
         model:    'gpt-4o',
@@ -188,6 +186,17 @@ ${extractedText}
       });
       console.log("AI response:",response)
       let raw= response.choices[0].message.content;
+
+      await AIUsage.findOneAndUpdate(
+            {},
+            {
+              $inc: {
+                totalRequests: 1,
+                resumeTokens: response.usage.total_tokens,
+                totalTokens: response.usage.total_tokens,
+              },
+            }
+          );
 
 let profileData;
 

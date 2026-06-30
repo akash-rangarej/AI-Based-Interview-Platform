@@ -1,14 +1,31 @@
-const AIUsageAnalytics = () => {
-  const analytics = {
-    totalRequests: 2450,
-    totalInterviews: 510,
-    totalTokens: "1.35M",
-    estimatedCost: "$4.65",
+import { useEffect, useState } from "react";
+import api from "../../../api/axiosClient";
 
-    resumeTokens: "120K",
-    questionTokens: "450K",
-    evaluationTokens: "780K",
-  };
+const AIUsageAnalytics = () => {
+const [analytics, setAnalytics] = useState(null);
+
+useEffect(() => {
+  fetchAnalytics();
+}, []);
+
+const fetchAnalytics = async () => {
+  try {
+    const { data } = await api.get("/admin/ai-analytics", {
+      headers: {
+        Authorization: `Bearer ${localStorage.getItem("token")}`,
+      },
+    });
+
+    setAnalytics(data);
+  } catch (error) {
+    console.error(error);
+  }
+};
+
+if (!analytics) {
+  return <div className="text-white">Loading...</div>;
+}
+
 
   return (
     <div className="text-white p-6">
@@ -40,7 +57,7 @@ const AIUsageAnalytics = () => {
         </div>
 
         <div className="bg-slate-900 border border-slate-700 rounded-xl p-5">
-          <h3 className="text-slate-400">Estimated Cost</h3>
+          <h3 className="text-slate-400">Estimated Cost(In USD $)</h3>
           <p className="text-3xl font-bold mt-2">
             {analytics.estimatedCost}
           </p>
@@ -60,7 +77,7 @@ const AIUsageAnalytics = () => {
           </div>
 
           <div className="flex justify-between border-b border-slate-700 pb-3">
-            <span>Question Generation</span>
+            <span>Question Generation (Questions token)</span>
             <span>{analytics.questionTokens}</span>
           </div>
 

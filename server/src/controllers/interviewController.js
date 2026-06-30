@@ -5,6 +5,7 @@ const OpenAI    = require('openai');
 const cloudinary = require("../config/cloudinary")
 const fs = require("fs")
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+const AIUsage = require("../models/AIUsage");
 
 // ── Start Interview + Generate All Questions ───────────────────
 const startInterview = async (req, res) => {
@@ -40,6 +41,21 @@ const startInterview = async (req, res) => {
         model:    'gpt-4o',
         messages: [{ role: 'user', content: prompt }],
       });
+
+            await AIUsage.findOneAndUpdate(
+      {},
+      {
+        $inc: {
+          totalRequests: 1,
+          questionTokens: response.usage.total_tokens,
+          totalTokens: response.usage.total_tokens,
+        },
+      }
+    );
+
+          
+
+      console.log("Question Generation:", response.usage);
       
       let raw       = response.choices[0].message.content.trim();
       raw = raw
@@ -135,7 +151,7 @@ const uploadRecording = async (req, res) => {
     fs.unlink(req.file.path, (err) => {
   if (err) console.error(err);
   });
-
+console.log("Cloudinary Upload Result:", result);
     res.status(200).json({
       success: true,
       recordingUrl: result.secure_url,
@@ -222,6 +238,20 @@ Evaluate and return ONLY a valid JSON object, no markdown, no explanation:
         messages: [{ role: 'user', content: prompt }],
       });
 
+      console.log("Answer Evaluation:", response.usage);
+
+      await AIUsage.updateOne(
+  {},
+  {
+    $inc: {
+      totalRequests: 1,
+      evaluationTokens: response.usage.total_tokens,
+      resumeTokens: response.usage.total_tokens,
+      totalTokens: response.usage.total_tokens,
+    },
+  }
+);
+
       const evaluation      = JSON.parse(response.choices[0].message.content.trim());
       question.aiEvaluation = evaluation;
       totalScore           += evaluation.score;
@@ -261,9 +291,23 @@ Return ONLY a valid JSON object, no markdown, no explanation:
       model:    'gpt-4o',
       messages: [{ role: 'user', content: summaryPrompt }],
     });
-
+    
+    console.log("Summary Generation:", summaryResponse.usage);
     const summary = JSON.parse(summaryResponse.choices[0].message.content.trim());
 
+        await AIUsage.updateOne(
+  {},
+  {
+    $inc: {
+      totalRequests: 1,
+      totalInterviews: 1,
+      summaryTokens: summaryResponse.usage.total_tokens,
+      totalTokens: summaryResponse.usage.total_tokens,
+    },
+  }
+);
+ 
+    
        
     const result = await Result.create({
       interviewId:  interview._id,

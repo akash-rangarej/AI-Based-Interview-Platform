@@ -1,3 +1,4 @@
+const AIUsage = require("../models/AIUsage");
 const User = require("../models/User");
 
 const getCandidates = async (req, res) => {
@@ -60,7 +61,49 @@ const deleteCandidate = async (req, res) => {
   }
 };
 
+
+const getAIAnalytics = async (req, res) => {
+  try {
+    const analytics = await AIUsage.findOne();
+
+    const COST_PER_1M_TOKENS = 6.25; // Approx GPT-4o average cost
+
+  const estimatedCost =
+  (analytics.totalTokens / 1_000_000) * COST_PER_1M_TOKENS;
+
+    if (!analytics) {
+      return res.status(200).json({
+        totalRequests: 0,
+        totalInterviews: 0,
+        resumeTokens: 0,
+        questionTokens: 0,
+        evaluationTokens: 0,
+        summaryTokens: 0,
+        totalTokens: 0,
+      });
+    }
+
+    res.status(200).json({
+      totalRequests: analytics.totalRequests,
+      totalInterviews: analytics.totalInterviews,
+      questionTokens: analytics.questionTokens,
+      resumeTokens: analytics.resumeTokens,
+      evaluationTokens: analytics.evaluationTokens,
+      summaryTokens: analytics.summaryTokens,
+      totalTokens: analytics.totalTokens,
+      estimatedCost: estimatedCost.toFixed(2)
+    });
+  } catch (error) {
+    res.status(500).json({
+      message: error.message,
+    });
+  }
+};
+
+
+
 module.exports = {
+  getAIAnalytics,
   getCandidates,
   getRecruiters,
   deleteCandidate,

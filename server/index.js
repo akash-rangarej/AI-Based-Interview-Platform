@@ -23,7 +23,7 @@ app.use("/api/candidate", candidateRoutes);
 app.use("/api/recruiter",recuiterRoutes)
 app.use("/api/interview-posts", interviewPostRoutes);
 app.use("/api/users", userRoutes);
-app.use("/api/interview",interviewRoutes)
+app.use("/api/interview",interviewRoutes);
 app.use("/api/admin", adminRoutes);
 
 app.listen(5000, () => {

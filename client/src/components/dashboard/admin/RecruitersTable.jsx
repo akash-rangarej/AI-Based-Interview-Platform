@@ -5,6 +5,8 @@ const RecruitersTable = () => {
   const [allRecruiters, setAllRecruiters] = useState([]);
   const [results, setResults] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [newRecruiterEmail, setNewRecruiterEmail] = useState("");
+  const [newName, setNewName] = useState("");
   const token = localStorage.getItem("token");
 
   const [filters, setFilters] = useState({
@@ -33,6 +35,33 @@ const RecruitersTable = () => {
       setLoading(false);
     }
   };
+
+
+  const handleAddRecruiter = async () => {
+  if (!newRecruiterEmail.trim()) return;
+
+  try {
+    const { data } = await api.post(
+      "/admin/add-recruiter",
+      { name:newName,
+        email: newRecruiterEmail },
+      {
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem("token")}`,
+        },
+      }
+    );
+
+    setNewRecruiterEmail("");
+
+    // Refresh recruiter list
+    fetchRecruiters();
+
+    console.log(data.message);
+  } catch (err) {
+    console.error(err);
+  }
+};
 
   const handleChange = (e) => {
     setFilters({
@@ -118,6 +147,36 @@ const RecruitersTable = () => {
       <h1 className="text-5xl font-bold mb-8">
         View Recruiters
       </h1>
+      <div className="bg-slate-900 border border-slate-700 rounded-xl p-5 mb-8">
+        <h2 className="text-xl font-semibold mb-4">
+          Add Recruiter
+        </h2>
+
+        <div className="flex gap-3">
+           <input
+            type="text"
+            placeholder="Enter recruiter name"
+            value={newName}
+            onChange={(e) => setNewName(e.target.value)}
+            className="flex-1 bg-slate-800 border border-slate-700 rounded-lg p-3 outline-none focus:border-blue-500"
+          />
+          <input
+            type="email"
+            placeholder="Enter recruiter email"
+            value={newRecruiterEmail}
+            onChange={(e) => setNewRecruiterEmail(e.target.value)}
+            className="flex-1 bg-slate-800 border border-slate-700 rounded-lg p-3 outline-none focus:border-blue-500"
+          />
+         
+
+          <button
+            onClick={handleAddRecruiter}
+            className="bg-emerald-600 hover:bg-emerald-700 px-6 rounded-lg font-medium whitespace-nowrap"
+          >
+            Add Recruiter
+          </button>
+        </div>
+      </div>
 
       <div className="grid md:grid-cols-3 gap-4 mb-4">
         <input

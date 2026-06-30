@@ -1,7 +1,7 @@
 const interviewpost = require("../models/interviewpost");
 const InterviewPost = require("../models/interviewpost");
 const User = require("../models/User");
-
+const Admin = require("../models/Admin")
 // ─────────────────────────────────────────────
 // POST /api/interviews/post
 // Recruiter submits the form
@@ -95,7 +95,7 @@ const Can_getDashboardPosts = async (req, res) => {
 
 const Rec_getDashboardPosts = async (req,res) =>{
   try {
-    const user = await User.findById(req.user.id).select("email role");
+    const user = await Admin.findById(req.user.id).select("email role");
 
     if (!user) {
       return res.status(404).json({ message: "User not found." });
@@ -130,7 +130,7 @@ const getInterviewPostById = async (req, res) => {
       return res.status(410).json({ message: "This interview is no longer available." });
     }
 
-    if (post.candidateEmail && post.candidateEmail !== req.user.email) {
+    if (post.candidateEmail !== req.user.email) {
       return res.status(403).json({ message: "This interview is not meant for you." });
     }
 

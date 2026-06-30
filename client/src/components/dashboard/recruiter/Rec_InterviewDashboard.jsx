@@ -17,8 +17,10 @@ const RecruiterDashboard = () => {
     const fetchPosts = async () => {
       try {
         const { data } = await api.get("/interview-posts/my-posts", {
-          headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
+    
         });
+
+
         setPosts(data.posts || []);
       } catch (err) {
         const msg = err.response?.data?.message || "Failed to load your posts.";

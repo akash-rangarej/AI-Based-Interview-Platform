@@ -4,6 +4,7 @@ const router = express.Router();
 const {
   getCandidates,
   getRecruiters,
+  addRecruiter,
   deleteCandidate,
   deleteRecruiter,
   getAIAnalytics
@@ -27,6 +28,7 @@ router.get(
   getRecruiters
 );
 
+router.post("/add-recruiter",authMiddleware,roleMiddleware("admin"),addRecruiter)
 router.delete(
   "/candidates/:id",
   authMiddleware,

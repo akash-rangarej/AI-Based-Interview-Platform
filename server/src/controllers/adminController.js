@@ -1,5 +1,6 @@
 const AIUsage = require("../models/AIUsage");
 const User = require("../models/User");
+const Admin = require("../models/Admin")
 
 const getCandidates = async (req, res) => {
   try {
@@ -14,8 +15,8 @@ const getCandidates = async (req, res) => {
 
 const getRecruiters = async (req, res) => {
   try {
-    const recruiters = await User.find({ role: "recruiter" })
-      .select("_id name email ph_no");
+    const recruiters = await Admin.find({})
+      .select("name email");
 
     res.status(200).json({ recruiters });
   } catch (error) {
@@ -23,6 +24,39 @@ const getRecruiters = async (req, res) => {
   }
 };
 
+
+const addRecruiter = async(req,res) =>{
+  try{
+
+    const {name , email} = req.body;
+
+    const emailExist = await Admin.findOne({email})
+
+    if(emailExist){
+      return res.status(409).json({
+        message:"the user with this email is already registered"
+      })
+    }
+
+    const recruiter  = await Admin.create({
+      name,
+      email,
+    })
+
+    return res.status(200).json({
+      recruiter:recruiter,
+      message:"the recruiter added successfully"
+    })
+
+
+  }
+  catch(err){
+    res.status(500).json({
+      message:`server error: ${err}`
+    })
+
+  }
+}
 const deleteRecruiter = async (req, res) => {
   try {
     const { id } = req.params;
@@ -106,6 +140,7 @@ module.exports = {
   getAIAnalytics,
   getCandidates,
   getRecruiters,
+  addRecruiter,
   deleteCandidate,
   deleteRecruiter,
 };

@@ -29,19 +29,18 @@ const CandidateDashboard = ({onAttend}) => {
   useEffect(() => {
     const fetchPosts = async () => {
       try {
-        const token = localStorage.getItem("token");
-
-        // ── Debug checks ──────────────────────────────
-        if (!token) {
-          setError("You are not logged in. Please login again.");
-          setLoading(false);
-          return;
-        }
+        // const token = localStorage.getItem("token");
+        // console.log("the token:", token)
+        // // ── Debug checks ──────────────────────────────
+        // if (!token) {
+        //   setError("You are not logged in. Please login again.");
+        //   setLoading(false);
+        //   return;
+        // }
         // ─────────────────────────────────────────────
 
         const { data } = await api.get("/interview-posts/dashboard", {
     
-          headers: { Authorization: `Bearer ${token}` },
         });
         console.log("data",data)
 

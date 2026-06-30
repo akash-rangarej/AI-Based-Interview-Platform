@@ -11,12 +11,15 @@ const interviewPostRoutes = require("./src/routes/interviewPostRoutes")
 const userRoutes = require("./src/routes/recruiterRoutes")
 const interviewRoutes = require("./src/routes/interviewRoutes")
 const adminRoutes = require("./src/routes/adminRoutes");
+const cookieParser = require("cookie-parser");
 connectDB();
 
 app.use(cors({
-    origin: process.env.CLIENT_URL || "http://localhost:5173"
+    origin: process.env.CLIENT_URL || "http://localhost:5173",
+    credentials: true
 }));
 app.use(express.json());
+app.use(cookieParser());
 
 app.use("/api/auth",authRoutes);
 app.use("/api/candidate", candidateRoutes);

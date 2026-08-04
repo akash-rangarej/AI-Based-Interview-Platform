@@ -328,6 +328,8 @@ export default function InstructionPage({ post, onBack, onStart }) {
                 ? "✓ Terms & Conditions Accepted"
                 : "View Terms & Conditions"}
             </a>
+
+
           </div>
              <TermsAndConditionsModal
               isOpen={showTerms}

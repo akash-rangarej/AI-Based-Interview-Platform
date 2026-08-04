@@ -366,8 +366,7 @@ export default function InterviewScreen({ interviewId }) {
       await fetchQuestion()
 
     } catch (err) {
-      toast.error(
-        "Something went wrong. Please try again."
+      toast.error( err?.response?.data?.message 
       );
     }
     finally {

@@ -316,50 +316,6 @@ const getNextQuestion = async (req, res) => {
 };
 
 
-
-
-// const saveAnswer = async (req, res) => {
-//   try {
-//     const { questionId, transcript } = req.body;
-
-//     const videoFile = req.files.video[0];
-
-//     const result = await cloudinary.uploader.upload(videoFile.path, {
-//       resource_type: "video",
-//       folder: "interview-recordings",
-//     });
-
-//     const interview = await Interview.findById(req.params.id);
-//     if (!interview) return res.status(404).json({ message: 'Interview not found' });
-
-//     const question = interview.questions.id(questionId);
-//     if (!question) return res.status(404).json({ message: 'Question not found' });
-
-//     question.answerText = transcript || "";
-//     question.recordingUrl = result.secure_url;
-//     question.answeredAt = new Date();
-
-//     fs.unlink(videoFile.path, () => {});
-
-//     await interview.save();
-
-//     res.json({
-//       message: "answer saved",
-//       success: true,
-//       transcript,
-//     });
-//   } catch (err) {
-//     console.log(err.message);
-
-//     res.status(500).json({
-//       success: false,
-//       message: err.message,
-//     });
-//   }
-// };
-
-
-
 const saveAnswer = async (req, res) => {
   try {
     const { questionId, transcript } = req.body;
@@ -474,7 +430,7 @@ const interview_violation = async (req, res) => {
       from: process.env.EMAIL_FROM || process.env.EMAIL_USER,
       to: recruiter.email,
       subject: "interview rules violation notification",
-      text: `the candidate with email : ${candidate.email}
+      text: `the candidate ${candidate.name} with email : ${candidate.email}
        has violated the interview rules by switching tabs multiple times, 
        and the interview post and interview has been terminated.`
     });

@@ -68,19 +68,7 @@ export default function InstructionPage({ post, onBack, onStart }) {
         numberOfQuestions: post.numberOfQuestions,
       });
 
-  try {
-    const response = await api.post(
-      "/interview/start-interview",
-      {
-        postId: post._id,
-        candidateId: post.candidateId,
-        jobRole: post.role,
-        jobDescription: post.jobDescription,
-        skills: post.skills,
-        difficulty: post.difficulty,
-        numberOfQuestions: post.numberOfQuestions,
-      }
-    );
+  
     if (response.status === 201) {
       toast.success("Interview started.");
       onStart(response.data.interviewId);
@@ -341,6 +329,8 @@ export default function InstructionPage({ post, onBack, onStart }) {
                 ? "✓ Terms & Conditions Accepted"
                 : "View Terms & Conditions"}
             </a>
+
+
           </div>
              <TermsAndConditionsModal
               isOpen={showTerms}

@@ -9,7 +9,6 @@ const termsAndConditions = [
   "Once an answer is submitted or the interview progresses to the next question, previous responses cannot be edited or revisited.",
   "Failure to comply with these terms may result in the interview being terminated or your application being disqualified.",
   "By clicking I Accept, you confirm that you have read, understood, and agreed to these Terms & Conditions and consent to the interview process.",
-
 ];
 
 export default termsAndConditions;

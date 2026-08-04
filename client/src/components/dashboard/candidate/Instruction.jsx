@@ -68,15 +68,28 @@ export default function InstructionPage({ post, onBack, onStart }) {
         numberOfQuestions: post.numberOfQuestions,
       });
 
-      if (response.status === 201) {
-        toast.success("Interview started.");
-        onStart(response.data.interviewId);
+  try {
+    const response = await api.post(
+      "/interview/start-interview",
+      {
+        postId: post._id,
+        candidateId: post.candidateId,
+        jobRole: post.role,
+        jobDescription: post.jobDescription,
+        skills: post.skills,
+        difficulty: post.difficulty,
+        numberOfQuestions: post.numberOfQuestions,
       }
-
-    } catch(err) {
-       toast.error(err.response?.data?.message || "Something went wrong");
+    );
+    if (response.status === 201) {
+      toast.success("Interview started.");
+      onStart(response.data.interviewId);
     }
-  };
+  } catch (err) {
+    toast.error(err.response?.data?.message || "Something went wrong");
+
+  }
+};
 
   return (
     <div className="mx-auto max-w-2xl text-white">

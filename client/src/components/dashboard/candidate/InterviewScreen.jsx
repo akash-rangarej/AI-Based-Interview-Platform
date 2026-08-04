@@ -30,9 +30,15 @@ export default function InterviewScreen({ interviewId }) {
   const [timeLeft, setTimeLeft] = useState(TIME_PER_QUESTION);
   const [submitting, setSubmitting] = useState(false);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
+  const answerPhaseStartedRef = useRef(false);
+  const [showWarningModal, setShowWarningModal] = useState(false);
+  const [showTabSwitchModal, setShowTabSwitchModal] = useState(false);
+  const [inputMode, setInputMode] = useState("voice");
+  const [typedAnswer, setTypedAnswer] = useState("");
   const [liveTranscript, setLiveTranscript] = useState("");
   const [isRecordingAnswer, setIsRecordingAnswer] = useState(false);
   const [backButton,setBackbutton]=useState(false);
+  const [interviewcompleted, setinterviewcompleted] = useState(false);
 
   const timerRef = useRef(null);
   const videoRef = useRef(null);
@@ -104,38 +110,120 @@ export default function InterviewScreen({ interviewId }) {
 
   }, [interviewId]);
 
+// for locking the esc and cntrlc and v
+useEffect(() => {
+  // 1. Right-click block
+  const handleContextMenu = (event) => {
+    event.preventDefault();
+  };
+
+  // 2. Keyboard shortcuts block (Copy, Paste)
+  const handleKeyDown = (event) => {
+    const isCopyOrPaste = event.key === "c" || event.key === "v" || event.key === "C" || event.key === "V";
+    if ((event.ctrlKey || event.metaKey) && isCopyOrPaste) {
+      event.preventDefault();
+      event.stopPropagation();
+    }
+  };
+
+  // 3. Monitor Fullscreen Transitions
+  const handleFullscreenChange = async () => {
+    if (document.fullscreenElement) {
+      // Check if browser supports the Keyboard Lock feature
+      const supportsKeyboardLock = ('keyboard' in navigator) && ('lock' in navigator.keyboard);
+      
+      if (supportsKeyboardLock) {
+        try {
+          // Trap the Escape key inside the webpage
+          await navigator.keyboard.lock(['Escape']);
+          console.log('Escape key successfully locked inside fullscreen mode.');
+        } catch (error) {
+          console.error('Failed to lock the keyboard:', error);
+        }
+      }
+    } else {
+      // If they somehow managed to exit, release the lock and show your warning
+      if ('keyboard' in navigator && 'unlock' in navigator.keyboard) {
+        navigator.keyboard.unlock();
+      }
+      toast.error("Security Warning: Please return to fullscreen mode immediately.");
+    }
+  };
+
+  // 4. Attach all listeners
+  document.addEventListener('contextmenu', handleContextMenu);
+  window.addEventListener("keydown", handleKeyDown, true);
+  document.addEventListener('fullscreenchange', handleFullscreenChange);
+
+  // 5. Cleanup function
+  return () => {
+    if(interviewcompleted === true){
+      document.removeEventListener('contextmenu', handleContextMenu);
+      window.removeEventListener("keydown", handleKeyDown, true);
+      document.removeEventListener('fullscreenchange', handleFullscreenChange);
+      if ('keyboard' in navigator && 'unlock' in navigator.keyboard) {
+        navigator.keyboard.unlock();
+      }
+    }
+  };
+}, []);
+
+
+
+  const isFirstModeRenderRef = useRef(true);
+
+useEffect(() => {
+  if (isFirstModeRenderRef.current) {
+    isFirstModeRenderRef.current = false;
+    return;
+  }
+
+  // Question is still being read aloud — nothing to toggle yet.
+  // The speak() callback above will respect inputMode once it starts.
+  if (!answerPhaseStartedRef.current) {
+    return;
+  }
+
+  if (inputMode === "text") {
+    stopStreaming();
+    setIsRecordingAnswer(false);
+  } else {
+    setIsRecordingAnswer(true);
+    startStreaming(mediaStreamRef.current);
+  }
+}, [inputMode]);
+
 
   const { speak, stopSpeaking } = useSpeechSynthesis();
 
-  const cleanupSession = useCallback(() => {
-    clearInterval(timerRef.current);
+const cleanupSession = useCallback(() => {
+  clearInterval(timerRef.current);
+  stopSpeaking();
+  stopStreaming();
+  setIsRecordingAnswer(false);
+  // Stop MediaRecorder if it's still recording
+  stopVideoRecording().catch(() => { });
+  // Stop camera + microphone
+  if (mediaStreamRef.current) {
+    mediaStreamRef.current.getTracks().forEach((track) => {
+      track.stop();
+    });
+    mediaStreamRef.current = null;
+  }
+  // Remove video source
+  if (videoRef.current) {
+    videoRef.current.srcObject = null;
+  }
 
-    stopSpeaking();
-    stopStreaming();
-
-    setIsRecordingAnswer(false);
-
-    // Stop MediaRecorder if it's still recording
-    stopVideoRecording().catch(() => { });
-
-    // Stop camera + microphone
-    if (mediaStreamRef.current) {
-      mediaStreamRef.current.getTracks().forEach((track) => {
-        track.stop();
-      });
-
-      mediaStreamRef.current = null;
-    }
-
-    // Remove video source
-    if (videoRef.current) {
-      videoRef.current.srcObject = null;
-    }
-  }, [
-    stopSpeaking,
-    stopStreaming,
-    stopVideoRecording,
-  ]);
+  // Exit fullscreen if still active
+  // if (document.fullscreenElement) {
+  //   document.exitFullscreen().catch(() => { });
+  // }
+}, [
+  stopSpeaking,
+  stopStreaming,
+  stopVideoRecording,
+]);
 
 
   // for tab switch violation
@@ -157,8 +245,30 @@ export default function InterviewScreen({ interviewId }) {
     [cleanupSession, navigate]
   );
 
+useTabSwitchGuard({
+  enabled: true,
+  maxViolations: 2,
 
- const fetchQuestion = useCallback(async () => {
+  onWarning: ({ count, remaining }) => {
+    setShowWarningModal(true);
+  },
+
+  onViolation: async () => {
+    cleanupSession();
+    setShowWarningModal(false); // in case it was still open
+    setShowTabSwitchModal(true);
+
+    try {
+      await api.post(`/interview/interview-violation`, {
+        isviolated: true,
+      });
+    } catch (err) {
+      console.error(err);
+    }
+  },
+});
+
+const fetchQuestion = useCallback(async () => {
 
 
   // Prevent concurrent requests
@@ -186,23 +296,28 @@ export default function InterviewScreen({ interviewId }) {
     console.log("question no:", questionSeqRef.current)
     socket.emit("start_question");
 
-    liveTranscriptRef.current = "";
-    setLiveTranscript("");
+liveTranscriptRef.current = "";
+setLiveTranscript("");
+setTypedAnswer("");
 
-    stopSpeaking();
+stopSpeaking();
 
-    speak(
+answerPhaseStartedRef.current = false; // reset — TTS is about to play
+
+speak(
   res.data.question.questionText,
   async () => {
 
-    setIsRecordingAnswer(true);
+    answerPhaseStartedRef.current = true; // TTS done, answering has started
 
-        setIsRecordingAnswer(true);
-
-        await startStreaming(mediaStreamRef.current);
-
-      }
-    );
+    if (inputMode === "voice") {
+      setIsRecordingAnswer(true);
+      await startStreaming(mediaStreamRef.current);
+    }
+    // if inputMode is "text" when the question loads, stay silent —
+    // don't start streaming until they toggle to voice
+  }
+);
 
     setQuestionIndex((prev) => prev + 1);
 
@@ -227,6 +342,7 @@ export default function InterviewScreen({ interviewId }) {
   speak,
   stopSpeaking,
   startStreaming,
+  inputMode,
 ]);
 
   useEffect(() => {
@@ -320,26 +436,33 @@ export default function InterviewScreen({ interviewId }) {
       // Force OpenAI to finalize any speech still sitting in the buffer
       // before we read the transcript, so the last sentence before "Next"
       // isn't lost.
-      await new Promise((resolve) => {
+    if (inputMode === "voice") {
+  await new Promise((resolve) => {
+    const timeout = setTimeout(() => {
+      socket.off("transcript_commit_complete", onComplete);
+      resolve(); // don't hang forever even if backend never responds
+    }, 5000);
 
-        socket.once("transcript_commit_complete", () => {
-          resolve();
-        });
+    const onComplete = () => {
+      clearTimeout(timeout);
+      resolve();
+    };
 
-        socket.emit("commit_audio");
+    socket.once("transcript_commit_complete", onComplete);
+    socket.emit("commit_audio");
+  });
+}
 
-      });
-
-      await stopStreaming();
+      if (inputMode === "voice") {
+        await stopStreaming();
+      }
       setIsRecordingAnswer(false);
 
-      const videoBlob = await stopVideoRecording();
+        const videoBlob = await stopVideoRecording();
 
-
-
-       await uploadAnswer(
+        await uploadAnswer(
           videoBlob,
-          liveTranscriptRef.current
+          inputMode === "text" ? typedAnswer : liveTranscriptRef.current
         );
 
       if (questionIndex >= TOTAL_QUESTIONS) {
@@ -347,6 +470,8 @@ export default function InterviewScreen({ interviewId }) {
           `/interview/${interviewId}/submit`,
           {}
         );
+
+        setinterviewcompleted(true)
 
         cleanupSession();
         setShowSuccessModal(true);
@@ -383,6 +508,8 @@ export default function InterviewScreen({ interviewId }) {
     stopSpeaking,
     submitting,
     uploadAnswer,
+    inputMode,
+    typedAnswer,
   ]);
 
   
@@ -446,58 +573,98 @@ export default function InterviewScreen({ interviewId }) {
 
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
         <div className="flex flex-col gap-4 lg:col-span-2">
-          <section className="rounded-lg border border-slate-800 bg-slate-900 p-5">
-            <p className="mb-3 text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">
-              Current question
-            </p>
-            {loading ? (
-              <p className="animate-pulse text-sm text-slate-400">
-                Generating question...
+            <section className="rounded-lg border border-slate-800 bg-slate-900 p-5 min-h-[140px]">
+              <p className="mb-3 text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">
+                Current question
               </p>
-            ) : (
-              <p className="text-base font-medium leading-relaxed">
-                {question?.questionText}
-              </p>
-            )}
-          </section>
-
-          <section className="flex flex-1 flex-col gap-4 rounded-lg border border-slate-800 bg-slate-900 p-5">
-            <div className="flex items-center gap-2">
-              <span className="h-2 w-2 rounded-full bg-red-500" />
-              <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">
-                Live transcript
-              </p>
-            </div>
-
-            <div className="min-h-[120px] flex-1 text-sm leading-relaxed text-slate-300">
-              {liveTranscript || (
-                <span className="text-slate-600">
-                  Start speaking. Your answer will appear here.
-                </span>
+              {loading ? (
+                <p className="animate-pulse text-sm text-slate-400">
+                  Generating question...
+                </p>
+              ) : (
+                <p className="text-lg font-medium leading-relaxed">
+                  {question?.questionText}
+                </p>
               )}
-              {isRecordingAnswer && (
-                <span className="ml-1 inline-block h-4 w-0.5 animate-pulse bg-white align-middle" />
-              )}
-            </div>
+            </section>
 
-            <div className="flex flex-col gap-3 border-t border-slate-800 pt-3 sm:flex-row sm:items-center sm:justify-between">
-              <div className="text-xs text-slate-500">
-                {isRecordingAnswer ? "Listening..." : "Mic off"}
-              </div>
-              <button
-                type="button"
-                onClick={handleNext}
-                disabled={loading || submitting}
-                className="h-10 rounded-md bg-emerald-600 px-5 text-sm font-semibold text-white hover:bg-emerald-500 disabled:cursor-not-allowed disabled:opacity-50 cursor-pointer"
-              >
-                {submitting
-                  ? "Saving..."
-                  : isLastQuestion
-                    ? "Submit interview"
-                    : "Next question"}
-              </button>
-            </div>
-          </section>
+                        <section className="flex flex-1 flex-col gap-4 rounded-lg border border-slate-800 bg-slate-900 p-5">
+                <div className="flex items-center gap-2">
+                  <span className="h-2 w-2 rounded-full bg-red-500" />
+                  <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">
+                    Live transcript
+                  </p>
+                </div>
+
+                {inputMode === "text" ? (
+                  <textarea
+                    value={typedAnswer}
+                    onChange={(e) => setTypedAnswer(e.target.value)}
+                    placeholder="Type your answer here..."
+                    className="min-h-[240px] flex-1 resize-none rounded-md border border-slate-700 bg-slate-950 p-4 text-sm text-slate-200 placeholder:text-slate-600 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                  />
+                ) : (
+                  <div className="min-h-[240px] flex-1 text-sm leading-relaxed text-slate-300">
+                    {liveTranscript || (
+                      <span className="text-slate-600">
+                        Start speaking. Your answer will appear here.
+                      </span>
+                    )}
+                    {isRecordingAnswer && (
+                      <span className="ml-1 inline-block h-4 w-0.5 animate-pulse bg-white align-middle" />
+                    )}
+                  </div>
+                )}
+
+                <div className="flex flex-col gap-3 border-t border-slate-800 pt-3 sm:flex-row sm:items-center sm:justify-between">
+                  <div className="text-xs text-slate-500">
+                    {isRecordingAnswer ? "Listening..." : "Mic off"}
+                  </div>
+
+                  <div className="flex items-center gap-3">
+                    {/* Segmented Voice/Type toggle */}
+                    <div className="relative flex rounded-full bg-slate-800 p-1">
+                      <button
+                        type="button"
+                        onClick={() => setInputMode("voice")}
+                        className={`relative z-10 flex items-center gap-1.5 rounded-full px-4 py-1.5 text-xs font-semibold transition-colors duration-200 ${
+                          inputMode === "voice" ? "text-white" : "text-slate-400 hover:text-slate-200"
+                        }`}
+                      >
+                        🎤 Voice
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setInputMode("text")}
+                        className={`relative z-10 flex items-center gap-1.5 rounded-full px-4 py-1.5 text-xs font-semibold transition-colors duration-200 ${
+                          inputMode === "text" ? "text-white" : "text-slate-400 hover:text-slate-200"
+                        }`}
+                      >
+                        ⌨️ Type
+                      </button>
+                      <span
+                        className={`absolute top-1 bottom-1 w-[calc(50%-4px)] rounded-full bg-emerald-600 transition-transform duration-200 ease-out ${
+                          inputMode === "text" ? "translate-x-full" : "translate-x-0"
+                        }`}
+                        style={{ left: "4px" }}
+                      />
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={handleNext}
+                      disabled={loading || submitting}
+                      className="h-10 rounded-md bg-emerald-600 px-5 text-sm font-semibold text-white hover:bg-emerald-500 disabled:cursor-not-allowed disabled:opacity-50 cursor-pointer"
+                    >
+                      {submitting
+                        ? "Saving..."
+                        : isLastQuestion
+                          ? "Submit interview"
+                          : "Next question"}
+                    </button>
+                  </div>
+                </div>
+              </section>
         </div>
 
         <aside className="flex flex-col gap-4">
@@ -559,9 +726,6 @@ export default function InterviewScreen({ interviewId }) {
               onClick={() => {
                 cleanupSession()
                 navigate("/dashboard", { replace: true })
-                // setTimeout(() => {
-                //   window.location.reload()
-                // }, 2000);
               }}
               className="rounded-md bg-emerald-600 px-6 py-3 font-semibold text-white hover:bg-emerald-500 cursor-pointer"
             >
@@ -570,6 +734,47 @@ export default function InterviewScreen({ interviewId }) {
           </div>
         </div>
       )}
+
+      {showWarningModal && (
+  <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4">
+    <div className="w-full max-w-md rounded-lg border border-amber-700 bg-slate-900 p-8 text-center">
+      <h2 className="mb-3 text-2xl font-bold text-amber-400">
+        Tab switch detected
+      </h2>
+      <p className="mb-6 text-slate-300">
+        Switching tabs again will end your interview immediately.
+      </p>
+      <button
+        type="button"
+        onClick={() => setShowWarningModal(false)}
+        className="rounded-md bg-amber-600 px-6 py-3 font-semibold text-white hover:bg-amber-500 cursor-pointer"
+      >
+        Continue interview
+      </button>
+    </div>
+  </div>
+)}
+
+      {showTabSwitchModal && (
+  <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4">
+    <div className="w-full max-w-md rounded-lg border border-red-900 bg-slate-900 p-8 text-center">
+      <h2 className="mb-3 text-2xl font-bold text-red-400">
+        Interview cancelled
+      </h2>
+      <p className="mb-6 text-slate-300">
+        You switched away from this tab. For fairness to all candidates,
+        the interview session ends immediately when that happens.
+      </p>
+      <button
+        type="button"
+        onClick={() => navigate("/dashboard", { replace: true, state: { malpractice: true } })}
+        className="rounded-md bg-red-600 px-6 py-3 font-semibold text-white hover:bg-red-500 cursor-pointer"
+      >
+        Return to dashboard
+      </button>
+    </div>
+  </div>
+)}
     </div>
   );
 }

@@ -7,11 +7,22 @@ export const useTabSwitchGuard = ({
   onViolation,
 }) => {
   const violationCountRef = useRef(0);
+  const lastViolationAtRef = useRef(0);
 
   useEffect(() => {
     if (!enabled) return;
 
     const handleViolation = (reason) => {
+      const now = Date.now();
+
+      // visibilitychange and window.blur both fire for the same tab
+      // switch — ignore a second trigger that lands within 500ms of
+      // the first so one switch only ever counts once.
+      if (now - lastViolationAtRef.current < 500) {
+        return;
+      }
+      lastViolationAtRef.current = now;
+
       violationCountRef.current++;
 
       const count = violationCountRef.current;

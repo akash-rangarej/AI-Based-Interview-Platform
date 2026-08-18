@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import api from "../../../api/axiosClient";
-import toast, { Toaster } from "react-hot-toast";
+import toast from "react-hot-toast";
 import {
   Briefcase,
   CalendarDays,
@@ -123,7 +123,7 @@ const refetch = () => {
     const slots = generateSlots(activePost.startTime, activePost.endTime, activePost.duration);
     return (
       <div className="mx-auto max-w-5xl text-white">
-  <Toaster />
+ 
 
   {/* Header */}
   <button
@@ -257,7 +257,6 @@ const refetch = () => {
 
   return (
     <div className="max-w-2xl mx-auto text-white">
-      <Toaster />
       <div className="mb-6 flex flex-col justify-between gap-3 sm:flex-row sm:items-end">
     <div>
       <p className="text-xs font-semibold uppercase tracking-[0.2em] text-emerald-300">

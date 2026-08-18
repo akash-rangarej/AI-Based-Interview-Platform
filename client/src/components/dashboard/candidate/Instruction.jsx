@@ -92,6 +92,7 @@ export default function InstructionPage({ post, onBack, onStart }) {
       }
     } catch (err) {
       toast.error(err.response?.data?.message || "Something went wrong");
+      console.log(err.response?.data?.message)
 
     }
   }

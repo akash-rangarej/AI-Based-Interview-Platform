@@ -13,13 +13,6 @@ const OpenAI = require('openai');
 const InterviewViolation = require("../models/interviewViolation");
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
-// NOTE: the old `let postidforviolation = ""` module-level variable was
-// removed. Module-level variables are shared across every request the
-// Node process handles (not per-request), so under concurrent traffic one
-// candidate's postId could silently overwrite another candidate's. It
-// wasn't read anywhere in this file, so it's safe to drop; if something
-// downstream needs the postId, pass it explicitly via req.body/req.params
-// instead of module state.
 
 const startInterview = async (req, res) => {
   try {
@@ -27,7 +20,6 @@ const startInterview = async (req, res) => {
     const { jobRole, jobDescription, skills, difficulty, numberOfQuestions, postId } = req.body;
     const candidateId = req.user.id;
 
-    // for candidate to return from where he left in case od violation
     const existingInterview = await Interview.findOne({
       postId,
       candidateId,
@@ -53,17 +45,6 @@ const startInterview = async (req, res) => {
       !(user.experience?.length) &&
       !(user.projects?.length)) {
       return res.status(400).json({ message: 'profile should be filled before attending the interview' });
-    }
-
-    if (
-      !user.skills?.length ||
-      !user.education?.length ||
-      !user.experience?.length ||
-      !user.projects?.length
-    ) {
-      return res.status(400).json({
-        message: "Please upload your resume before attending the interview"
-      });
     }
 
   const questions = [
@@ -483,11 +464,65 @@ const getResult = async (req, res) => {
   }
 };
 
+
+const autoSubmitInterview = async (interviewId, reason = "connection-timeout") => {
+
+  try {
+
+    const interview = await Interview.findById(interviewId);
+
+    if (!interview) {
+      console.error(`autoSubmitInterview: interview not found [${interviewId}]`);
+      return;
+    }
+
+    const existingResult = await Result.findOne({ interviewId: interview._id });
+
+    if (existingResult) {
+      return;
+    }
+    const claimed = await Interview.findOneAndUpdate(
+      { _id: interview._id, status: "in_progress" },
+      { $set: { status: "auto_submitted", submittedAt: new Date(), endReason: reason } }
+    );
+
+    if (!claimed) {
+      return;
+    }
+
+    const result = await Result.create({
+      interviewId: interview._id,
+      recruiterId: interview.recruiterId,
+      candidateId: interview.candidateId,
+      overallScore: 0,
+      summary: {
+        totalQuestions: interview.questions.length,
+        averageScore: 0,
+        recommendation: "incomplete",
+        note: "Interview ended automatically due to a lost connection that was not restored in time.",
+      },
+      questions: interview.questions,
+      evaluatedAt: new Date(),
+    });
+
+    await InterviewViolation.findOneAndDelete({ interviewId: interview._id });
+
+    console.log(`Interview auto-submitted [${interviewId}] due to: ${reason}`);
+
+    return result;
+
+  } catch (err) {
+    console.error(`autoSubmitInterview failed [${interviewId}]:`, err);
+  }
+
+};
+
 module.exports = {
   startInterview,
   getNextQuestion,
   saveAnswer,
   interview_violation,
   submitInterview,
-  getResult
+  getResult,
+  autoSubmitInterview, 
 };

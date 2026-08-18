@@ -16,6 +16,8 @@ const interviewRoutes = require("./src/routes/interviewRoutes")
 const adminRoutes = require("./src/routes/adminroutes");
 const cookieParser = require("cookie-parser");
 const initializeInterviewSocket = require("./src/utils/socket");
+const initializeConnectionGuard = require("./src/utils/connectionGuard"); 
+const { autoSubmitInterview } = require("./src/controllers/interviewController");
 
 const app = express();
 connectDB();
@@ -27,9 +29,19 @@ const io = new Server(server, {
         origin: process.env.CLIENT_URL || "http://localhost:5173",
         credentials: true,
     },
+    pingInterval: 2000,  
+    pingTimeout: 2000, 
 });
 
 initializeInterviewSocket(io);
+
+
+initializeConnectionGuard(io, {
+    onGraceExpired: async (interviewId) => {
+        await autoSubmitInterview(interviewId, "connection-timeout");
+        initializeInterviewSocket.endSession(interviewId);
+    },
+})
 
 
 app.use(cors({

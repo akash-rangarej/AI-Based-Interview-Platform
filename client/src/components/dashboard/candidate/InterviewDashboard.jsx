@@ -1,15 +1,18 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useState, useRef} from "react";
 import api from "../../../api/axiosClient";
 import { useFetchData } from "../../../hooks/useFetchData";
+import toast from "react-hot-toast";
 
-const TimeLeft = ({ startTime, endTime }) => {
+const JOIN_WINDOW_MS = 10 * 60 * 1000; // 10 minutes
+
+const TimeLeft = ({ startTime }) => {
   const [message, setMessage] = useState("");
 
   useEffect(() => {
     const calc = () => {
       const now = new Date();
       const start = new Date(startTime);
-      const end = new Date(endTime);
+      const joinDeadline = new Date(start.getTime() + JOIN_WINDOW_MS);
 
       // Before interview starts
       if (now < start) {
@@ -17,40 +20,37 @@ const TimeLeft = ({ startTime, endTime }) => {
 
         const hrs = Math.floor(diff / 1000 / 60 / 60);
         const mins = Math.floor((diff / 1000 / 60) % 60);
+         const secs = Math.floor((diff / 1000) % 60);
 
         setMessage(
           hrs > 0
             ? `Starts in ${hrs}h ${mins}m`
-            : `Starts in ${mins}m`
+            : `Starts in ${mins}m ${secs}s`
         );
         return;
       }
 
-      // Interview is running
-      if (now <= end) {
-        const diff = end - now;
+      // Inside the 10-min join window
+      if (now <= joinDeadline) {
+        const diff = joinDeadline - now;
 
-        const hrs = Math.floor(diff / 1000 / 60 / 60);
-        const mins = Math.floor((diff / 1000 / 60) % 60);
+        const mins = Math.floor(diff / 1000 / 60);
+        const secs = Math.floor((diff / 1000) % 60);
 
-        setMessage(
-          hrs > 0
-            ? `${hrs}h ${mins}m remaining`
-            : `${mins}m remaining`
-        );
+        setMessage(`interview closes in ${mins}m ${secs}s`);
         return;
       }
 
-      // Interview expired
-      setMessage("Interview window has ended");
+      // Join window has passed
+      setMessage("interview window has ended");
     };
 
     calc();
 
-    const interval = setInterval(calc, 30000);
+    const interval = setInterval(calc, 1000);
 
     return () => clearInterval(interval);
-  }, [startTime, endTime]);
+  }, [startTime]);
 
   return (
     <span className="text-xs font-medium text-amber-300">
@@ -59,7 +59,14 @@ const TimeLeft = ({ startTime, endTime }) => {
   );
 };
 
+
+
+
+
 const CandidateDashboard = ({ onAttend }) => {
+  const [now, setNow] = useState(() => new Date()); 
+  const toastLockRef = useRef(false);
+
   const fetchPosts = useCallback(async () => {
     const { data } = await api.get("/interview-posts/dashboard");
     const allPosts = data.posts || [];
@@ -80,6 +87,17 @@ const CandidateDashboard = ({ onAttend }) => {
       !/OPR/.test(navigator.userAgent)
     );
   };
+
+  const showToastOnce = (message) => {
+  if (toastLockRef.current) return; 
+
+  toastLockRef.current = true;
+  toast.error(message);
+
+  setTimeout(() => {
+    toastLockRef.current = false;
+  }, 3200); 
+};
 
   const getDashboardError = useCallback((err) => {
     const msg =
@@ -106,6 +124,34 @@ const CandidateDashboard = ({ onAttend }) => {
     initialData: [],
     getErrorMessage: getDashboardError,
   });
+
+  useEffect(() => {
+    if (!posts.length) return;
+
+    let timeoutId;
+
+    const scheduleNextBoundary = () => {
+      const current = new Date();
+
+      const upcomingBoundaries = posts
+        .flatMap((post) => [new Date(post.startTime), new Date(post.endTime)])
+        .filter((boundary) => boundary > current);
+
+      if (upcomingBoundaries.length === 0) return;
+
+      const nearestBoundary = new Date(Math.min(...upcomingBoundaries));
+      const calculatedDelay = nearestBoundary - current;
+
+      timeoutId = setTimeout(() => {
+        setNow(new Date());
+        scheduleNextBoundary();
+      }, calculatedDelay);
+    };
+
+    scheduleNextBoundary();
+
+    return () => clearTimeout(timeoutId);
+  }, [posts]);
 
   if (loading) {
     return (
@@ -157,10 +203,10 @@ const CandidateDashboard = ({ onAttend }) => {
           {posts.map((post) => {
             const now = new Date();
             const start = new Date(post.startTime);
-            const end = new Date(post.endTime);
+           const joinDeadline = new Date(start.getTime() + JOIN_WINDOW_MS);
 
             const hasStarted = now >= start;
-            const hasExpired = now > end;
+            const hasExpired = now > joinDeadline;
 
             return (
               <article
@@ -222,14 +268,12 @@ const CandidateDashboard = ({ onAttend }) => {
                         return;
                       }
                       if (!hasStarted) {
-                        toast.error("Your interview hasn't started yet.", {
-                          icon: "⏰",
-                        });
+                       showToastOnce("Your interview hasn't started yet.");
                         return;
                       }
 
                       if (hasExpired) {
-                        toast.error("This interview window has expired.");
+                        showToastOnce("This interview window has expired.");
                         return;
                       }
 

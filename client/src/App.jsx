@@ -1,6 +1,5 @@
 import { useState } from "react";
 import { Navigate, Route, Routes, useNavigate } from "react-router-dom";
-import { Toaster } from "react-hot-toast";
 import "./App.css";
 import AnimatedBackground from "./components/Auth/AnimatedBackground";
 import ForgotPassword from "./components/Auth/ForgotPassword";
@@ -188,17 +187,6 @@ function AppRoutes() {
 function App() {
   return (
     <>
-      <Toaster
-        position="top-center"
-        toastOptions={{
-          duration: 3200,
-          style: {
-            background: "#111827",
-            border: "1px solid rgba(148, 163, 184, 0.22)",
-            color: "#f8fafc",
-          },
-        }}
-      />
       <AppRoutes />
     </>
   );

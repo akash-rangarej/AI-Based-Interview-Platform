@@ -1,6 +1,6 @@
 import { useState } from "react";
 import api from "../../../api/axiosClient";
-import toast, { Toaster } from "react-hot-toast";
+import toast from "react-hot-toast";
 
 
 const PostInterview = () => {
@@ -70,9 +70,8 @@ const PostInterview = () => {
     try {
       const res = await api.post("/interview-posts/post", form);
       
-      if (res.status == 201){
+     
         toast.success(`Interview posted! It will be available for candidates.`)
-      }
 
       // Reset form after successful post
       setForm({
@@ -94,8 +93,7 @@ const PostInterview = () => {
         duration: 30,
       });
     } catch (err) {
-      const msg = err.response?.data?.message || "Something went wrong. Please try again.";
-      setErrorMsg(msg);
+      toast.error(err.response?.data?.message || errorMsg);
     } finally {
       setLoading(false);
     }
@@ -104,13 +102,6 @@ const PostInterview = () => {
   return (
     <div className="max-w-4xl mx-auto text-white">
       <h2 className="text-2xl font-bold mb-6 !text-white">AI Interview Setup</h2>
-
-      {/* Error Message */}
-      {errorMsg && (
-        <div className="mb-4 p-3 bg-red-900/50 border border-red-600 text-red-300 rounded">
-          {errorMsg}
-        </div>
-      )}
 
       <form onSubmit={handleSubmit} className="space-y-4">
 

@@ -8,6 +8,9 @@ import { useMediaRecorder } from "./hooks/useMediaRecorder";
 import { useSpeechSynthesis } from "./hooks/useTextToSpeech";
 import { useRealtimeAudio } from "./hooks/useRealtimeAudio";
 import { useNavigationGuard } from "./hooks/useNavigationGuard";
+import { useInternetConnection } from "./hooks/useInternetConnection";
+
+
 
 const TOTAL_QUESTIONS = 6;
 
@@ -96,12 +99,14 @@ export default function InterviewScreen({ interviewId }) {
     stopStreaming
   } = useRealtimeAudio();
 
+  const { connectionLost, countdown } = useInternetConnection();
+
   // socket test
   useEffect(() => {
 
     socket.connect();
 
-    socket.on("connect", () => {
+    const handleConnect = () => {
 
       console.log("Connected:", socket.id);
 
@@ -109,15 +114,15 @@ export default function InterviewScreen({ interviewId }) {
         interviewId,
       });
 
-    });
+    };
 
-    socket.on("joined_interview", (data) => {
+    const handleJoined = (data) => {
 
       console.log("Joined interview:", data.interviewId);
 
-    });
+    };
 
-    socket.on("transcript", (data) => {
+    const handleTranscript = (data) => {
 
       console.log("Transcript:", data);
 
@@ -130,13 +135,17 @@ export default function InterviewScreen({ interviewId }) {
       liveTranscriptRef.current = data.fullTranscript;
       setLiveTranscript(data.fullTranscript);
 
-    });
+    };
+
+    socket.on("connect", handleConnect);
+    socket.on("joined_interview", handleJoined);
+    socket.on("transcript", handleTranscript);
 
     return () => {
 
-      socket.off("connect");
-      socket.off("joined_interview");
-      socket.off("transcript");
+      socket.off("connect", handleConnect);
+      socket.off("joined_interview", handleJoined);
+      socket.off("transcript", handleTranscript);
 
       socket.disconnect();
 
@@ -180,6 +189,26 @@ export default function InterviewScreen({ interviewId }) {
     stopStreaming,
     stopVideoRecording,
   ]);
+
+  // Redirects the candidate off the interview screen once the backend's
+  // 15s reconnect grace period expires and auto-submits the interview.
+  useEffect(() => {
+
+    const handleAutoSubmitted = () => {
+      cleanupSession();
+      navigate("/dashboard", {
+        replace: true,
+        state: { connectionLost: true },
+      });
+    };
+
+    socket.on("interview-auto-submitted", handleAutoSubmitted);
+
+    return () => {
+      socket.off("interview-auto-submitted", handleAutoSubmitted);
+    };
+
+  }, [cleanupSession, navigate]);
 
 
   const terminateInterview = useCallback(async () => {
@@ -702,6 +731,7 @@ export default function InterviewScreen({ interviewId }) {
     setTypedAnswer(liveTranscript)
   };
 
+
   return (
     <>
       <div className="min-h-screen bg-[#0a0f1d] p-4 text-white sm:p-6">
@@ -982,6 +1012,29 @@ export default function InterviewScreen({ interviewId }) {
           </div>
         )
       }
+     {connectionLost && (
+    <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/80">
+        <div className="w-full max-w-md rounded-xl bg-slate-900 p-8 text-center">
+
+            <h2 className="text-2xl font-bold text-red-400">
+                Connection Lost
+            </h2>
+
+            <p className="mt-3 text-slate-300">
+                Your connection to the interview server was lost.
+            </p>
+
+            <div className="my-6 text-6xl font-bold">
+                {countdown}
+            </div>
+
+            <p className="text-sm text-slate-400">
+                Please reconnect within {countdown} seconds.
+            </p>
+
+        </div>
+    </div>
+)}
 
     </>
   );

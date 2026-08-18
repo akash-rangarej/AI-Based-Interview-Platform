@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import toast from "react-hot-toast";
 import api from "../../../api/axiosClient";
 
 const AIUsageAnalytics = () => {
@@ -18,7 +19,7 @@ const fetchAnalytics = async () => {
 
     setAnalytics(data);
   } catch (error) {
-    console.error(error);
+    toast.error(data.message)
   }
 };
 

@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import api from "../../../api/axiosClient";
+import toast from "react-hot-toast";
 
 const CandidatesTable = () => {
   const [allCandidates, setAllCandidates] = useState([]);
@@ -21,7 +22,7 @@ const CandidatesTable = () => {
       setAllCandidates(data.candidates || []);
       setResults(data.candidates || []);
     } catch (error) {
-      console.error(error);
+     toast.error(data.message)
     } finally {
       setLoading(false);
     }
@@ -45,7 +46,7 @@ const handleDeleteCandidate = async (id) => {
   if (!confirmDelete) return;
 
   try {
-    await api.delete(`/admin/candidates/${id}`);
+    const res = await api.delete(`/admin/candidates/${id}`);
 
     setAllCandidates((prev) =>
       prev.filter((candidate) => candidate._id !== id)
@@ -55,7 +56,7 @@ const handleDeleteCandidate = async (id) => {
       prev.filter((candidate) => candidate._id !== id)
     );
   } catch (error) {
-    console.error(error);
+    toast.error(res.data.message)
   }
 };
 

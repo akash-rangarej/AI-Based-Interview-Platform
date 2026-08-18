@@ -27,7 +27,7 @@ const RecruitersTable = () => {
       setAllRecruiters(data.recruiters || []);
       setResults(data.recruiters || []);
     } catch (error) {
-      console.error(error);
+      toast.error(data.message)
     } finally {
       setLoading(false);
     }

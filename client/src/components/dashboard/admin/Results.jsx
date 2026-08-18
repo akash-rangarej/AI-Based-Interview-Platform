@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import api from "../../../api/axiosClient";
+import toast from "react-hot-toast";
 
 export default function Results() {
   const [results, setResults] = useState([]);
@@ -13,7 +14,7 @@ export default function Results() {
 
         setResults(res.data.results || []);
       } catch (err) {
-        console.error(err);
+        toast.error(res.data.message)
       } finally {
         setLoading(false);
       }
@@ -41,7 +42,7 @@ export default function Results() {
         );
       }
     } catch (err) {
-      console.log("error:", err)
+      toast.error(res.data.message)
     }
   }
 

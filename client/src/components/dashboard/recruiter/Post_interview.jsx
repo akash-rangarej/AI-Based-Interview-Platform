@@ -107,7 +107,7 @@ const PostInterview = () => {
 
         {/* ✅ Fixed: name was "Name of the round" (spaces break req.body) */}
         <label className="mb-2 flex items-center text-sm font-medium text-slate-300">
-          Round Name :
+          Round Name 
           <span className="text-red-500 ml-2">*</span>
         </label>
         <input
@@ -119,7 +119,7 @@ const PostInterview = () => {
           onChange={handleChange}
         />
         <label className="mb-2 flex items-center text-sm font-medium text-slate-300">
-          Job Role :
+          Job Role 
           <span className="text-red-500 ml-2">*</span>
         </label>
         <input
@@ -131,7 +131,7 @@ const PostInterview = () => {
           onChange={handleChange}
         />
         <label className="mb-2 flex items-center text-sm font-medium text-slate-300">
-          Job Description :
+          Job Description 
           <span className="text-red-500 ml-2">*</span>
         </label>
         <textarea
@@ -156,7 +156,7 @@ const PostInterview = () => {
         />
   
         <label className="mb-2 flex items-center text-sm font-medium text-slate-300">
-          Candidate Type :
+          Candidate Type
           <span className="text-red-500 ml-2">*</span>
         </label>
         <select
@@ -202,7 +202,10 @@ const PostInterview = () => {
             </div>
           </div>
         )}
-
+              <label className="mb-2 flex items-center text-sm font-medium text-slate-300">
+          Difficulty
+          <span className="text-red-500 ml-2">*</span>
+        </label>
         <select
           name="difficulty"
           value={form.difficulty}
@@ -214,6 +217,10 @@ const PostInterview = () => {
           <option value="hard">hard</option>
         </select>
 
+                <label className="mb-2 flex items-center text-sm font-medium text-slate-300">
+          No of Questions
+          <span className="text-red-500 ml-2">*</span>
+        </label>
         <input
           name="questions"
           type="number"
@@ -222,7 +229,10 @@ const PostInterview = () => {
           className="w-full p-2 bg-slate-800 rounded"
           onChange={handleChange}
         />
-
+                <label className="mb-2 flex items-center text-sm font-medium text-slate-300">
+          Email
+          <span className="text-red-500 ml-2">*</span>
+        </label>
         <input
           required
           name="Email"

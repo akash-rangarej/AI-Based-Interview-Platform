@@ -186,16 +186,9 @@ try {
         JSON.parse(jsonText);
 
     personal_info = await User.findById(req.user.id).select("name email")
-    console.log("the info:", personal_info)
     profileData.name = personal_info.name
     profileData.email = personal_info.email
-    console.log("the profile data:", profileData)
 } catch (error) {
-
-    console.error(
-        "Failed to parse Gemini response:",
-        response.text
-    );
 
     return res.status(500).json({
         success:false,

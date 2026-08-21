@@ -10,8 +10,6 @@ const aiEvaluationSchema = new mongoose.Schema({
 
 const questionSchema = new mongoose.Schema({
   questionText: { type: String, required: true },
-  category: { type: String, enum: ['introduction', 'technical', 'behavioral', 'wrap-up'], required: true },
-  difficulty: { type: String, enum: ['easy', 'medium', 'hard'], required: true },
   orderIndex: { type: Number, required: true },  // question number (1, 2, 3...)
 
   // candidate's response

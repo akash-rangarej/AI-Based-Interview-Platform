@@ -52,50 +52,38 @@ export default function InstructionPage({ post, onBack, onStart }) {
   const allChecksPassed = deviceStatus === "success" && internetStatus === "success" && termsAccepted;
 
   const handleStart = async () => {
-    // enter into fullscreen mode
-    await document.documentElement.requestFullscreen()
-
+  try {
     if (!allChecksPassed) {
       toast.error("Please complete all checks before starting.");
       return;
     }
 
+    await document.documentElement.requestFullscreen();
 
-    try {
-      const response = await api.post(
-        "/interview/start-interview",
-        {
-          postId: post._id,
-          postedBy: post.postedBy,
-          candidateId: post.candidateId,
-          jobRole: post.role,
-          jobDescription: post.jobDescription,
-          skills: post.skills,
-          difficulty: post.difficulty,
-          numberOfQuestions: post.numberOfQuestions,
-        }
-      );
-
-      const { interviewId, resumed } = response.data;
-
-      if (resumed) {
-        toast.success("Resuming your interview...");
-      } else {
-        toast.success("Interview started.");
+    const response = await api.post(
+      "/interview/start-interview",
+      {
+        postId: post._id,
       }
+    );
 
-      onStart(interviewId);
+    const { interviewId, resumed } = response.data;
 
-      if (response.status === 201) {
-        toast.success("Interview started.");
-        onStart(response.data.interviewId);
-      }
-    } catch (err) {
-      toast.error(err.response?.data?.message || "Something went wrong");
-      console.log(err.response?.data?.message)
-
+    if (resumed) {
+      toast.success("Resuming your interview...");
+    } else {
+      toast.success("Interview started.");
     }
+
+    onStart(interviewId);
+
+  } catch (err) {
+    toast.error(
+      err.response?.data?.message ||
+      "Something went wrong while starting the interview."
+    );
   }
+};
 
   return (
     <div className="mx-auto max-w-2xl text-white">

@@ -85,7 +85,7 @@ const createInterviewPost = async (req, res) => {
        minExperience: candidateType === "experienced" ? Number(minExperience) : null,
        maxExperience: candidateType === "experienced" ? Number(maxExperience) : null,
        difficulty,
-       numberOfQuestions: Number(questions) || 10,
+       numberOfQuestions: Number(questions) || 15,
       followUps,
       adaptive,
       candidateEmail: Email,
@@ -154,7 +154,7 @@ const Rec_getDashboardPosts = async (req,res) =>{
     }
 
   let query = { postedBy: req.user.id,status: { $in: ["active", "scheduled"] }};
-  let fields = "roundName role skills candidateType minExperience maxExperience expiresAt status difficulty numberOfQuestions candidateEmail"
+  let fields = "roundName role skills candidateType minExperience maxExperience expiresAt createdAt status difficulty numberOfQuestions candidateEmail"
 
 const posts = await InterviewPost.find(query)
       .select(fields)
@@ -163,7 +163,6 @@ const posts = await InterviewPost.find(query)
     return res.status(200).json({ posts });
 }
 catch(err){
- console.error(" recruiter getDashboardPosts error:", err);
     res.status(500).json({ message: "Server error." });
 }
 }

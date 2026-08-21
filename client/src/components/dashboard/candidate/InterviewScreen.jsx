@@ -12,17 +12,6 @@ import { useInternetConnection } from "./hooks/useInternetConnection";
 
 
 
-const TOTAL_QUESTIONS = 6;
-
-const steps = [
-  "Introduction",
-  "Experience",
-  "Technical skills",
-  "Problem solving",
-  "Behavioral",
-  "Wrap up",
-];
-
 export default function InterviewScreen({ interviewId }) {
   const navigate = useNavigate();
 
@@ -34,6 +23,7 @@ export default function InterviewScreen({ interviewId }) {
   const [liveTranscript, setLiveTranscript] = useState("");
   const [isRecordingAnswer, setIsRecordingAnswer] = useState(false);
   const [showWarningModal, setShowWarningModal] = useState(false);
+  const [totalQuestions, setTotalQuestions] = useState(0);
   // Tracks which channel triggered the shared warning modal ("tabSwitch" |
   // "fullscreen") purely so we can word the message correctly. The
   // underlying violation COUNT is shared across both channels on the
@@ -412,12 +402,16 @@ export default function InterviewScreen({ interviewId }) {
     };
 
     // 4. Attach all listeners
-    // document.addEventListener('contextmenu', handleContextMenu);
+    document.addEventListener('contextmenu', handleContextMenu);
     window.addEventListener("keydown", handleKeyDown, true);
     document.addEventListener('fullscreenchange', handleFullscreenChange);
 
     // 5. Cleanup function
     return () => {
+      window.removeEventListener(
+        "contextmenu",
+        handleContextMenu
+      );
       window.removeEventListener(
         "keydown",
         handleKeyDown,
@@ -463,7 +457,6 @@ export default function InterviewScreen({ interviewId }) {
       startStreaming(mediaStreamRef.current);
     }
   }, [inputMode]);
-
 
 
   const fetchQuestion = useCallback(async () => {
@@ -517,6 +510,8 @@ export default function InterviewScreen({ interviewId }) {
       );
 
       setQuestionIndex(res.data.question.orderIndex);
+
+      setTotalQuestions(res.data.totalQuestions);
 
 
     } catch (err) {
@@ -659,7 +654,7 @@ export default function InterviewScreen({ interviewId }) {
         inputMode === "text" ? typedAnswer : liveTranscriptRef.current
       );
 
-      if (questionIndex >= TOTAL_QUESTIONS) {
+      if (questionIndex >= totalQuestions) {
         await api.post(
           `/interview/${interviewId}/submit`,
           {}
@@ -698,6 +693,7 @@ export default function InterviewScreen({ interviewId }) {
     interviewId,
     question,
     questionIndex,
+    totalQuestions,
     startVideoRecording,
     stopVideoRecording,
     stopSpeaking,
@@ -711,7 +707,7 @@ export default function InterviewScreen({ interviewId }) {
 
 
 
-  const isLastQuestion = questionIndex >= TOTAL_QUESTIONS;
+  const isLastQuestion = questionIndex >= totalQuestions;
 
 
   const switchToVoice = async () => {
@@ -741,7 +737,7 @@ export default function InterviewScreen({ interviewId }) {
               AI Interview
             </span>
             <span className="text-sm text-slate-400">
-              Question {questionIndex} of {TOTAL_QUESTIONS}
+              Question {questionIndex} of {totalQuestions}
             </span>
           </div>
         </div>
@@ -848,7 +844,7 @@ export default function InterviewScreen({ interviewId }) {
             </div>
           </div>
 
-          <aside className="flex flex-col gap-4">
+          {/* <aside className="flex flex-col gap-4">
             <section className="flex-1 rounded-lg border border-slate-800 bg-slate-900 p-5">
               <p className="mb-4 text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">
                 Progress
@@ -889,7 +885,7 @@ export default function InterviewScreen({ interviewId }) {
                 })}
               </div>
             </section>
-          </aside>
+          </aside> */}
         </div>
       </div>
 
@@ -1012,29 +1008,29 @@ export default function InterviewScreen({ interviewId }) {
           </div>
         )
       }
-     {connectionLost && (
-    <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/80">
-        <div className="w-full max-w-md rounded-xl bg-slate-900 p-8 text-center">
+      {connectionLost && (
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/80">
+          <div className="w-full max-w-md rounded-xl bg-slate-900 p-8 text-center">
 
             <h2 className="text-2xl font-bold text-red-400">
-                Connection Lost
+              Connection Lost
             </h2>
 
             <p className="mt-3 text-slate-300">
-                Your connection to the interview server was lost.
+              Your connection to the interview server was lost.
             </p>
 
             <div className="my-6 text-6xl font-bold">
-                {countdown}
+              {countdown}
             </div>
 
             <p className="text-sm text-slate-400">
-                Please reconnect within {countdown} seconds.
+              Please reconnect within {countdown} seconds.
             </p>
 
+          </div>
         </div>
-    </div>
-)}
+      )}
 
     </>
   );

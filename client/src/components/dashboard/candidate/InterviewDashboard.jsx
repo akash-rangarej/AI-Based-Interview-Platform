@@ -1,48 +1,49 @@
-import { useCallback, useEffect, useState, useRef} from "react";
+import { useCallback, useEffect, useState, useRef } from "react";
 import api from "../../../api/axiosClient";
 import { useFetchData } from "../../../hooks/useFetchData";
 import toast from "react-hot-toast";
 
-const JOIN_WINDOW_MS = 10 * 60 * 1000; // 10 minutes
 
-const TimeLeft = ({ startTime }) => {
+const TimeLeft = ({ startTime, endTime }) => {
   const [message, setMessage] = useState("");
 
   useEffect(() => {
     const calc = () => {
       const now = new Date();
       const start = new Date(startTime);
-      const joinDeadline = new Date(start.getTime() + JOIN_WINDOW_MS);
+      const end = new Date(endTime);
 
-      // Before interview starts
+      // Before the selected slot starts
       if (now < start) {
         const diff = start - now;
 
         const hrs = Math.floor(diff / 1000 / 60 / 60);
         const mins = Math.floor((diff / 1000 / 60) % 60);
-         const secs = Math.floor((diff / 1000) % 60);
+        const secs = Math.floor((diff / 1000) % 60);
 
         setMessage(
           hrs > 0
             ? `Starts in ${hrs}h ${mins}m`
             : `Starts in ${mins}m ${secs}s`
         );
+
         return;
       }
 
-      // Inside the 10-min join window
-      if (now <= joinDeadline) {
-        const diff = joinDeadline - now;
+      // Inside the selected slot
+      if (now <= end) {
+        const diff = end - now;
 
         const mins = Math.floor(diff / 1000 / 60);
         const secs = Math.floor((diff / 1000) % 60);
 
-        setMessage(`interview closes in ${mins}m ${secs}s`);
+        setMessage(`Interview closes in ${mins}m ${secs}s`);
+
         return;
       }
 
-      // Join window has passed
-      setMessage("interview window has ended");
+      // Selected slot has ended
+      setMessage("Interview window has ended");
     };
 
     calc();
@@ -50,7 +51,7 @@ const TimeLeft = ({ startTime }) => {
     const interval = setInterval(calc, 1000);
 
     return () => clearInterval(interval);
-  }, [startTime]);
+  }, [startTime, endTime]);
 
   return (
     <span className="text-xs font-medium text-amber-300">
@@ -64,7 +65,7 @@ const TimeLeft = ({ startTime }) => {
 
 
 const CandidateDashboard = ({ onAttend }) => {
-  const [now, setNow] = useState(() => new Date()); 
+  const [now, setNow] = useState(() => new Date());
   const toastLockRef = useRef(false);
 
   const fetchPosts = useCallback(async () => {
@@ -89,15 +90,15 @@ const CandidateDashboard = ({ onAttend }) => {
   };
 
   const showToastOnce = (message) => {
-  if (toastLockRef.current) return; 
+    if (toastLockRef.current) return;
 
-  toastLockRef.current = true;
-  toast.error(message);
+    toastLockRef.current = true;
+    toast.error(message);
 
-  setTimeout(() => {
-    toastLockRef.current = false;
-  }, 3200); 
-};
+    setTimeout(() => {
+      toastLockRef.current = false;
+    }, 3200);
+  };
 
   const getDashboardError = useCallback((err) => {
     const msg =
@@ -203,10 +204,10 @@ const CandidateDashboard = ({ onAttend }) => {
           {posts.map((post) => {
             const now = new Date();
             const start = new Date(post.startTime);
-           const joinDeadline = new Date(start.getTime() + JOIN_WINDOW_MS);
+            const end = new Date(post.endTime);
 
             const hasStarted = now >= start;
-            const hasExpired = now > joinDeadline;
+            const hasExpired = now > end;
 
             return (
               <article
@@ -268,7 +269,7 @@ const CandidateDashboard = ({ onAttend }) => {
                         return;
                       }
                       if (!hasStarted) {
-                       showToastOnce("Your interview hasn't started yet.");
+                        showToastOnce("Your interview hasn't started yet.");
                         return;
                       }
 
@@ -280,10 +281,10 @@ const CandidateDashboard = ({ onAttend }) => {
                       onAttend(post);
                     }}
                     className={`h-11 shrink-0 rounded-md px-5 text-sm font-semibold text-white transition-colors cursor-pointer ${hasExpired
-                        ? "bg-red-600 hover:bg-red-500"
-                        : hasStarted
-                          ? "bg-emerald-600 hover:bg-emerald-500"
-                          : "bg-slate-700 hover:bg-slate-600"
+                      ? "bg-red-600 hover:bg-red-500"
+                      : hasStarted
+                        ? "bg-emerald-600 hover:bg-emerald-500"
+                        : "bg-slate-700 hover:bg-slate-600"
                       }`}
                   >
                     {hasExpired

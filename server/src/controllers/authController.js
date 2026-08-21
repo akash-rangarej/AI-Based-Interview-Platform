@@ -73,7 +73,7 @@ const getMe = async (req, res) => {
 
         if (!user) {
             return res.status(404).json({
-                message: "User not found"
+                message: "User not found."
             });
         }
 
@@ -82,7 +82,7 @@ const getMe = async (req, res) => {
         });
     } catch (error) {
         res.status(500).json({
-            message: error.message
+            message: "Unable to fetch user details. Please try again later."
         });
     }
 };
@@ -92,13 +92,13 @@ const emailVerify = async (req, res) => {
         const { email } = req.body;
 
         if (!email) {
-            return res.status(400).json({ message: "Email is required" });
+            return res.status(400).json({ message: "Email is required." });
         }
         const emailregex = /^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$/
 
         if (!emailregex.test(email)) {
             return res.status(400).json({
-                message: "please enter the valid email address"
+                message: "Please enter a valid email address."
             })
         }
         
@@ -106,7 +106,7 @@ const emailVerify = async (req, res) => {
         const existingCandidate = await User.findOne({ email: email.toLowerCase().trim() });
         if (existingUser || existingCandidate) {
             return res.status(409).json({
-                message: "The user with this email is already registered"
+                message: "A user with this email is already registered."
             });
         }
 
@@ -118,17 +118,22 @@ const emailVerify = async (req, res) => {
             expiresAt: Date.now() + 10 * 60 * 1000
         });
 
-
-        await sendOtp(normalizedEmail, otp);
-
+        try {
+            await sendOtp(normalizedEmail, otp);
+        } catch (mailErr) {
+            otpStore.delete(normalizedEmail);
+            return res.status(502).json({
+                message: "Unable to send OTP email. Please try again later."
+            });
+        }
 
         res.status(200).json({
-            message: "OTP sent to your registered email"
+            message: "OTP sent to your registered email."
         });
         
 
     } catch (error) {
-        res.status(500).json({ message: error.message });
+        res.status(500).json({ message: "Unable to process request. Please try again later." });
     }
 };
 
@@ -136,30 +141,30 @@ const otpVerify = async (req, res) => {
     try {
         const { email, otp } = req.body;
         if (!otp || !email) {
-            return res.status(400).json({ message: "otp and email are required" });
+            return res.status(400).json({ message: "OTP and email are required." });
         }
 
         const normalizedEmail = email.toLowerCase().trim();
         const storedData = otpStore.get(normalizedEmail);
 
         if (!storedData) {
-            return res.status(400).json({ message: "No OTP found for this email" });
+            return res.status(400).json({ message: "No OTP request found for this email." });
         }
 
         if (Date.now() > storedData.expiresAt) {
             otpStore.delete(normalizedEmail);
-            return res.status(400).json({ message: "OTP has expired" });
+            return res.status(400).json({ message: "OTP has expired. Please request a new one." });
         }
         if (storedData.otp !== otp) {
-            return res.status(400).json({ message: "Invalid OTP" });
+            return res.status(400).json({ message: "Invalid OTP." });
         }
 
         otpStore.delete(normalizedEmail);
-        res.status(200).json({ message: "OTP verified successfully" });
+        res.status(200).json({ message: "OTP verified successfully." });
 
 
     } catch (error) {
-        res.status(500).json({ message: error.message });
+        res.status(500).json({ message: "Unable to verify OTP. Please try again later." });
     }
 }
 // registration
@@ -170,7 +175,7 @@ const registerUser = async (req, res) => {
 
         if (!name || !email || !password) {
             return res.status(400).json({
-                message: "Name, email and password are required"
+                message: "Name, email and password are required."
             });
         }
 
@@ -186,8 +191,8 @@ const registerUser = async (req, res) => {
         const existingUser = admin || recruiter || candidate;
 
         if (existingUser) {
-            return res.status(400).json({
-                message: "User already exists with this email"
+            return res.status(409).json({
+                message: "A user already exists with this email."
             });
         }
 
@@ -206,14 +211,14 @@ const registerUser = async (req, res) => {
         generateTokenAndSetCookie(user, res);
 
         res.status(201).json({
-            message: "User registered successfully",
+            message: "User registered successfully.",
             user: formatUserResponse(user),
             mustChangePassword: true
         });
 
     } catch (error) {
         res.status(500).json({
-            message: error.message
+            message: `Unable to register user. Please try again later.: ${error}`
         });
     }
 };
@@ -225,6 +230,12 @@ const loginUser = async (req, res) => {
     try {
         const { email, password } = req.body;
 
+        if (!email || !password) {
+            return res.status(400).json({
+                message: "Email and password are required."
+            });
+        }
+
         if (
             email === process.env.ADMIN_EMAIL &&
             password === process.env.ADMIN_PASSWORD
@@ -235,7 +246,7 @@ const loginUser = async (req, res) => {
                 role: "admin"
             }, res);
             return res.status(200).json({
-                message: "Admin logged in successfully",
+                message: "Admin logged in successfully.",
                 user: {
                     id: "admin",
                     name: "Administrator",
@@ -253,14 +264,14 @@ const loginUser = async (req, res) => {
             const isRecPass = await bcrypt.compare(password, recruiter.password);
             if (!isRecPass) {
                 return res.status(401).json({
-                    message: "Invalid password"
+                    message: "Invalid email or password."
                 });
             }
 
 
             generateTokenAndSetCookie(recruiter, res);
             return res.status(200).json({
-                message: "Recruiter logged in successfully",
+                message: "Recruiter logged in successfully.",
                 user: formatUserResponse(recruiter)
             });
 
@@ -272,7 +283,7 @@ const loginUser = async (req, res) => {
 
         if (!user) {
             return res.status(401).json({
-                message: "User does not exist"
+                message: "Invalid email or password."
             });
         }
 
@@ -280,18 +291,18 @@ const loginUser = async (req, res) => {
 
         if (!isPasswordValid) {
             return res.status(401).json({
-                message: "Invalid email or password"
+                message: "Invalid email or password."
             });
         }
         generateTokenAndSetCookie(user, res);
         res.status(200).json({
-            message: "User logged in successfully",
+            message: "User logged in successfully.",
             user: formatUserResponse(user)
         });
 
     } catch (error) {
         res.status(500).json({
-            message: error.message
+            message: "Unable to log in. Please try again later."
         });
     }
 };
@@ -302,7 +313,7 @@ const forgotPassword = async (req, res) => {
         const { email } = req.body;
 
         if (!email) {
-            return res.status(400).json({ message: "Email is required" });
+            return res.status(400).json({ message: "Email is required." });
         }
 
         const normalizedEmail = email.toLowerCase().trim();
@@ -314,7 +325,10 @@ const forgotPassword = async (req, res) => {
         const cur_user = recruiter || user
 
         if (!cur_user) {
-            return res.status(404).json({ message: "User does not exist" });
+            // Avoid confirming whether an email is registered
+            return res.status(200).json({
+                message: "If an account exists for this email, an OTP has been sent."
+            });
         }
 
         const otp = crypto.randomInt(100000, 1000000).toString();
@@ -322,14 +336,20 @@ const forgotPassword = async (req, res) => {
         cur_user.resetPasswordOtpExpire = Date.now() + 10 * 60 * 1000;
         await cur_user.save();
 
+        try {
             await sendOtp(cur_user.email, otp);
+        } catch (mailErr) {
+            return res.status(502).json({
+                message: "Unable to send OTP email. Please try again later."
+            });
+        }
 
         res.status(200).json({
-            message: "OTP sent to your registered email"
+            message: "If an account exists for this email, an OTP has been sent."
         });
 
     } catch (error) {
-        res.status(500).json({ message: error.message });
+        res.status(500).json({ message: "Unable to process request. Please try again later." });
     }
 };
 
@@ -339,7 +359,7 @@ const verifyOtp = async (req, res) => {
 
         if (!email || !otp) {
             return res.status(400).json({
-                message: "Email and OTP are required"
+                message: "Email and OTP are required."
             });
         }
 
@@ -364,7 +384,7 @@ const verifyOtp = async (req, res) => {
 
         if (!cur_user) {
             return res.status(400).json({
-                message: "Invalid or expired OTP"
+                message: "Invalid or expired OTP."
             });
         }
 
@@ -374,12 +394,12 @@ const verifyOtp = async (req, res) => {
         await cur_user.save();
 
         res.status(200).json({
-            message: "OTP verified successfully"
+            message: "OTP verified successfully."
         });
 
     } catch (error) {
         res.status(500).json({
-            message: error.message
+            message: "Unable to verify OTP. Please try again later."
         });
     }
 };
@@ -392,7 +412,7 @@ const resetPassword = async (req, res) => {
 
         if (!email || !password) {
             return res.status(400).json({
-                message: "Email and new password are required"
+                message: "Email and new password are required."
             });
         }
 
@@ -416,13 +436,13 @@ const resetPassword = async (req, res) => {
 
         if (!cur_user) {
             return res.status(400).json({
-                message: "Invalid or expired OTP"
+                message: "Invalid or expired OTP."
             });
         }
 
         if (!cur_user.canResetPassword) {
             return res.status(400).json({
-                message: "Invalid or expired OTP"
+                message: "Invalid or expired OTP."
             });
         }
 
@@ -433,12 +453,12 @@ const resetPassword = async (req, res) => {
         await cur_user.save();
 
         res.status(200).json({
-            message: "Password reset successfully"
+            message: "Password reset successfully."
         });
 
     } catch (error) {
         res.status(500).json({
-            message: error.message
+            message: "Unable to reset password. Please try again later."
         });
     }
 };
@@ -450,11 +470,13 @@ const logoutUser = (req, res) => {
         });
 
         res.status(200).json({
-            message: "Logged out successfully"
+            message: "Logged out successfully."
         });
 
     } catch (error) {
-        throw new Error("Failed to LogOut");
+        res.status(500).json({
+            message: "Unable to log out. Please try again later."
+        });
     }
 };
 

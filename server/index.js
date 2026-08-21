@@ -26,7 +26,7 @@ const server = http.createServer(app);
 
 const io = new Server(server, {
     cors: {
-        origin: process.env.CLIENT_URL || "http://localhost:5173",
+        origin: ["http://localhost:5173", process.env.FRONTEND_URL],
         credentials: true,
     },
     pingInterval: 2000,  
@@ -60,6 +60,8 @@ app.use("/api/users", userRoutes);
 app.use("/api/interview",interviewRoutes);
 app.use("/api/admin", adminRoutes);
 
-server.listen(5000, () => {
-    console.log(`Server running on port 5000`);
+const PORT = process.env.PORT || 5000;
+
+server.listen(PORT, () => {
+    console.log(`Server running on port ${PORT}`);
 });

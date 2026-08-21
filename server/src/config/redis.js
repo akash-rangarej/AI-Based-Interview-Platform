@@ -1,10 +1,23 @@
 const IORedis = require("ioredis");
 
-const createRedisConnection = () =>
-  new IORedis({
-    host: "127.0.0.1",
-    port: 6379,
-    maxRetriesPerRequest: null,
-  });
+const createRedisConnection = () => {
+    const redis = new IORedis(process.env.REDIS_URL, {
+        maxRetriesPerRequest: null,
+    });
+
+    redis.on("connect", () => {
+        console.log("Redis connected");
+    });
+
+    redis.on("ready", () => {
+        console.log("Redis ready");
+    });
+
+    redis.on("error", (err) => {
+        console.error("Redis error:", err.message);
+    });
+
+    return redis;
+};
 
 module.exports = createRedisConnection;

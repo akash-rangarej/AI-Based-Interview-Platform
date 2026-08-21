@@ -145,7 +145,6 @@ function RegistrationPage() {
                 placeholder="Your full name"
                 autoComplete="name"
                 className="min-w-0 flex-1 bg-transparent text-white outline-none placeholder:text-slate-500"
-                required
               />
             </div>
           </label>

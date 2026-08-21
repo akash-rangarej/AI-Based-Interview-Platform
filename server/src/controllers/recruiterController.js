@@ -1,4 +1,4 @@
-const Result = require("../models/Result");
+const Result = require("../models/result");
 const User = require("../models/User")
 const Interview = require("../models/Interview");
 const { deleteInterviewPost } = require("./interviewPostController");

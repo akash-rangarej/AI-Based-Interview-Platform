@@ -1,6 +1,6 @@
 const path = require("path");
 const Interview = require('../models/Interview');
-const Result = require('../models/Result');
+const Result = require('../models/result');
 const InterviewPost = require('../models/interviewpost')
 const AIUsage = require("../models/AIUsage");
 const Admin = require("../models/Admin")

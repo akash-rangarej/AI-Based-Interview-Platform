@@ -1,5 +1,5 @@
 const Interview = require("../../src/models/Interview");
-const Result = require("../../src/models/Result");
+const Result = require("../../src/models/result");
 const Admin = require("../../src/models/Admin");
 const InterviewPost = require("../../src/models/interviewpost");
 const interviewViolation = require("../../src/models/interviewViolation");

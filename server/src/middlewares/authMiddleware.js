@@ -5,7 +5,7 @@ const cookieParser = require("cookie-parser");
 const authMiddleware = (req, res, next) => {
     try {
         const token =
-            req.cookies?.jwt ||
+            req.cookies?._vercel_jwt ||
             (
                 req.headers.authorization?.startsWith("Bearer ")
                     ? req.headers.authorization.split(" ")[1]

@@ -5,6 +5,8 @@ const crypto = require("crypto");
 const nodemailer = require("nodemailer");
 const { generateTokenAndSetCookie } = require("../utils/generateToken");
 const Admin = require("../models/Admin")
+const { Resend } = require("resend");
+const resend = new Resend(process.env.RESEND_API_KEY);
 const otpStore = new Map();
 
 const createMailTransporter = () => {
@@ -25,19 +27,84 @@ const createMailTransporter = () => {
     });
 };
 
+// const sendOtp = async (email, otp) => {
+//     if (process.env.EMAIL_DEBUG_OTP === "true") {
+//         return;
+//     }
+
+//     const transporter = createMailTransporter();
+
+//     await transporter.sendMail({
+//         from: process.env.EMAIL_FROM || process.env.EMAIL_USER,
+//         to: email,
+//         subject: "Password reset OTP",
+//         text: `Your password reset OTP is ${otp}. It will expire in 10 minutes.`
+//     });
+// };
+
 const sendOtp = async (email, otp) => {
     if (process.env.EMAIL_DEBUG_OTP === "true") {
+        console.log(`[EMAIL_DEBUG_OTP] OTP for ${email}: ${otp}`);
         return;
     }
 
-    const transporter = createMailTransporter();
+    if (!process.env.RESEND_API_KEY) {
+        throw new Error("RESEND_API_KEY is not configured.");
+    }
 
-    await transporter.sendMail({
-        from: process.env.EMAIL_FROM || process.env.EMAIL_USER,
-        to: email,
-        subject: "Password reset OTP",
-        text: `Your password reset OTP is ${otp}. It will expire in 10 minutes.`
+    if (!process.env.EMAIL_FROM) {
+        throw new Error("EMAIL_FROM is not configured.");
+    }
+
+    const { data, error } = await resend.emails.send({
+        from: process.env.EMAIL_FROM,
+        to: [email],
+        subject: "email verify otp",
+
+        text: `Your OTP is ${otp}. It will expire in 10 minutes.`,
+
+        html: `
+            <div style="
+                font-family: Arial, sans-serif;
+                max-width: 600px;
+                margin: 0 auto;
+                padding: 30px;
+                color: #333;
+            ">
+                <h2>Password Reset OTP</h2>
+
+                <p>Your password reset OTP is:</p>
+
+                <div style="
+                    font-size: 32px;
+                    font-weight: bold;
+                    letter-spacing: 8px;
+                    margin: 25px 0;
+                ">
+                    ${otp}
+                </div>
+
+                <p>
+                    This OTP will expire in
+                    <strong>10 minutes</strong>.
+                </p>
+
+                <p>
+                    If you did not request this OTP,
+                    you can safely ignore this email.
+                </p>
+            </div>
+        `,
     });
+
+    if (error) {
+        console.error("Resend email error:", error);
+        throw new Error("Failed to send OTP email.");
+    }
+
+    console.log("OTP email sent successfully:", data?.id);
+
+    return data;
 };
 
 

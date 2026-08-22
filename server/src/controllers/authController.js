@@ -6,26 +6,25 @@ const nodemailer = require("nodemailer");
 const { generateTokenAndSetCookie } = require("../utils/generateToken");
 const Admin = require("../models/Admin")
 const { Resend } = require("resend");
-const resend = new Resend(process.env.RESEND_API_KEY);
 const otpStore = new Map();
 
-const createMailTransporter = () => {
-    return nodemailer.createTransport({
-        host: "smtp.gmail.com",
-        port: 587,
-        secure: false,
-        family: 4,
+// const createMailTransporter = () => {
+//     return nodemailer.createTransport({
+//         host: "smtp.gmail.com",
+//         port: 587,
+//         secure: false,
+//         family: 4,
 
-        auth: {
-            user: process.env.EMAIL_USER,
-            pass: process.env.EMAIL_PASS,
-        },
+//         auth: {
+//             user: process.env.EMAIL_USER,
+//             pass: process.env.EMAIL_PASS,
+//         },
 
-        connectionTimeout: 15000,
-        greetingTimeout: 15000,
-        socketTimeout: 30000,
-    });
-};
+//         connectionTimeout: 15000,
+//         greetingTimeout: 15000,
+//         socketTimeout: 30000,
+//     });
+// };
 
 // const sendOtp = async (email, otp) => {
 //     if (process.env.EMAIL_DEBUG_OTP === "true") {
@@ -41,6 +40,7 @@ const createMailTransporter = () => {
 //         text: `Your password reset OTP is ${otp}. It will expire in 10 minutes.`
 //     });
 // };
+const resend = new Resend(process.env.RESEND_API_KEY);
 
 const sendOtp = async (email, otp) => {
     if (process.env.EMAIL_DEBUG_OTP === "true") {

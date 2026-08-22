@@ -101,7 +101,7 @@ const emailVerify = async (req, res) => {
                 message: "Please enter a valid email address."
             })
         }
-        
+
         const existingUser = await Admin.findOne({ email: email.toLowerCase().trim() });
         const existingCandidate = await User.findOne({ email: email.toLowerCase().trim() });
         if (existingUser || existingCandidate) {
@@ -122,6 +122,7 @@ const emailVerify = async (req, res) => {
             await sendOtp(normalizedEmail, otp);
         } catch (mailErr) {
             otpStore.delete(normalizedEmail);
+            console.log("mail error yowaimo: ", mailErr)
             return res.status(502).json({
                 message: "Unable to send OTP email. Please try again later."
             });
@@ -130,7 +131,7 @@ const emailVerify = async (req, res) => {
         res.status(200).json({
             message: "OTP sent to your registered email."
         });
-        
+
 
     } catch (error) {
         res.status(500).json({ message: "Unable to process request. Please try again later." });

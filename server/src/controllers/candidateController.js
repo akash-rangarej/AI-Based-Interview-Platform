@@ -4,11 +4,10 @@ const path = require("path");
 const pdf = require("pdf-parse");
 const mammoth = require("mammoth");
 const Tesseract = require("tesseract.js");
-const ai = require("../config/gemini");
 const cloudinary = require("../config/cloudinary")
-const OpenAI  = require("openai")
+const OpenAI = require("openai")
 const AIUsage = require("../models/AIUsage");
-const Admin  = require("../models/Admin")
+const Admin = require("../models/Admin")
 
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
@@ -104,7 +103,7 @@ const uploadResume = async (req, res) => {
         }
 
 
-    // generating the response from the llm by providing the extracted content
+        // generating the response from the llm by providing the extracted content
         const prompt = `
 You are a resume parser.
 
@@ -154,47 +153,47 @@ ${extractedText}
 
 
 
-      const response = await openai.chat.completions.create({
-        model:    'gpt-4o',
-        messages: [{ role: 'user', content: prompt }],
-      });
-      
-      let raw= response.choices[0].message.content;
+        const response = await openai.chat.completions.create({
+            model: 'gpt-4o',
+            messages: [{ role: 'user', content: prompt }],
+        });
 
-      await AIUsage.findOneAndUpdate(
+        let raw = response.choices[0].message.content;
+
+        await AIUsage.findOneAndUpdate(
             {},
             {
-              $inc: {
-                totalRequests: 1,
-                resumeTokens: response.usage.total_tokens,
-                totalTokens: response.usage.total_tokens,
-              },
+                $inc: {
+                    totalRequests: 1,
+                    resumeTokens: response.usage.total_tokens,
+                    totalTokens: response.usage.total_tokens,
+                },
             }
-          );
+        );
 
-let profileData;
+        let profileData;
 
-try {
+        try {
 
-    let jsonText =
-        raw
-        .replace(/```json/g, "")
-        .replace(/```/g, "")
-        .trim();
+            let jsonText =
+                raw
+                    .replace(/```json/g, "")
+                    .replace(/```/g, "")
+                    .trim();
 
-    profileData =
-        JSON.parse(jsonText);
+            profileData =
+                JSON.parse(jsonText);
 
-    personal_info = await User.findById(req.user.id).select("name email")
-    profileData.name = personal_info.name
-    profileData.email = personal_info.email
-} catch (error) {
+            personal_info = await User.findById(req.user.id).select("name email")
+            profileData.name = personal_info.name
+            profileData.email = personal_info.email
+        } catch (error) {
 
-    return res.status(500).json({
-        success:false,
-        message:"Invalid AI response"
-    });
-}
+            return res.status(500).json({
+                success: false,
+                message: "Invalid AI response"
+            });
+        }
 
         res.status(200).json({
 
@@ -220,74 +219,74 @@ try {
 
 
 const saveProfile = async (req, res) => {
-  try {
-    const {
-      name,
-      email,
-      skills,
-      education,
-      projects,
-      experience,
-      certifications,
-    } = req.body;
+    try {
+        const {
+            name,
+            email,
+            skills,
+            education,
+            projects,
+            experience,
+            certifications,
+        } = req.body;
 
-    // Check if email is already taken by another user
-    if (email) {
-        const recruiter = await Admin.findOne({email})
-        const user = await User.findOne({
-        email,
-        _id: { $ne: req.user.id }, // $ne = not equal — exclude current user
-      });
-      const emailExists = recruiter || user;
+        // Check if email is already taken by another user
+        if (email) {
+            const recruiter = await Admin.findOne({ email })
+            const user = await User.findOne({
+                email,
+                _id: { $ne: req.user.id }, // $ne = not equal — exclude current user
+            });
+            const emailExists = recruiter || user;
 
-      if (emailExists) {
-        return res.status(400).json({ message: "Email is already in use by another account." });
-      }
+            if (emailExists) {
+                return res.status(400).json({ message: "Email is already in use by another account." });
+            }
+        }
+
+
+        const user = await User.findByIdAndUpdate(
+            req.user.id,
+            {
+                name,
+                email,
+                skills,
+                education,
+                projects,
+                experience,
+                certificates: certifications,
+                profileCompleted: true,
+            },
+            { returnDocument: "after" }
+        );
+
+        res.status(200).json({
+            success: true,
+            message: "Profile saved",
+            user,
+        });
+
+    } catch (error) {
+        res.status(500).json({ message: error.message });
     }
-
-
-    const user = await User.findByIdAndUpdate(
-      req.user.id,
-      {
-        name,
-        email,
-        skills,
-        education,
-        projects,
-        experience,
-        certificates:certifications,
-        profileCompleted: true,
-      },
-      { returnDocument: "after" }
-    );
-    
-    res.status(200).json({
-      success: true,
-      message: "Profile saved",
-      user,
-    });
-
-  } catch (error) {
-    res.status(500).json({ message: error.message });
-  }
 };
 
 
-const getProfile = async(req,res)=>{
+const getProfile = async (req, res) => {
 
-    try{
+    try {
         const user =
-        await User.findById(req.user.id)
-        .select("-password");
+            await User.findById(req.user.id)
+                .select("-password");
         res.status(200).json({
-    success:true,
-    profile:user,
-});
+            success: true,
+            profile: user,
+        });
 
-    }catch(error){
+    } catch (error) {
 
         res.status(500).json({
-            message:error.message
+            message: error.message
         });
 
     }

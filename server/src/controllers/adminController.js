@@ -6,19 +6,12 @@ const Interview = require("../models/Interview")
 const InterviewPost = require("../models/interviewpost")
 const bcrypt = require("bcryptjs")
 const cloudinary = require("../config/cloudinary")
-const { BrevoClient } = require("@getbrevo/brevo");
+const { brevo } = require('./authController');
 const { createMailTransporter } = require("./authController")
 
 // const transporter = createMailTransporter();
 
-const BrevoEmail =  async()=>{
-
-    return new BrevoClient({
-        apiKey: process.env.BREVO_API_KEY,
-        timeoutInSeconds: 15,
-        maxRetries: 2,
-    });
-}
+const BrevoEmail = brevo
 
 const getCandidates = async (req, res) => {
   try {
@@ -80,38 +73,38 @@ const addRecruiter = async (req, res) => {
     // }
 
     try {
-            await BrevoEmail.transactionalEmails.sendTransacEmail({
-                sender: {
-                    email: process.env.EMAIL_FROM,
-                },
-    
-                to: [
-                    {
-                        email: email,
-                    },
-                ],
-    
-                subject: "Portal Invitation",
-    
-                textContent: `Dear ${name}, you have been added as a recruiter on the interview platform by an admin.`,
-    
-            });
-    
-            console.log(
-                "OTP email sent successfully:",
-                result?.messageId
-            );
-    
-        } catch (error) {
-            console.error(
-                "Brevo email error:",
-                error
-            );
-    
-            throw new Error(
-                "Failed to send OTP email."
-            );
-        }
+      await BrevoEmail.transactionalEmails.sendTransacEmail({
+        sender: {
+          email: process.env.EMAIL_FROM,
+        },
+
+        to: [
+          {
+            email: email,
+          },
+        ],
+
+        subject: "Portal Invitation",
+
+        textContent: `Dear ${name}, you have been added as a recruiter on the interview platform by an admin.`,
+
+      });
+
+      console.log(
+        "OTP email sent successfully:",
+        result?.messageId
+      );
+
+    } catch (error) {
+      console.error(
+        "Brevo email error:",
+        error
+      );
+
+      throw new Error(
+        "Failed to send OTP email."
+      );
+    }
 
     return res.status(201).json({
       recruiter: recruiter,
@@ -145,39 +138,39 @@ const deleteRecruiter = async (req, res) => {
       return res.status(404).json({ message: "Recruiter not found." });
     }
 
-       try {
-            await BrevoEmail.transactionalEmails.sendTransacEmail({
-                sender: {
-                    email: process.env.EMAIL_FROM,
-                },
-    
-                to: [
-                    {
-                        email: email,
-                    },
-                ],
-    
-                subject: "Portal Invitation",
-    
-                textContent: `Dear ${info.name} you have been from the interview platform by an admin.`,
-    
-            });
-    
-            console.log(
-                "OTP email sent successfully:",
-                result?.messageId
-            );
-    
-        } catch (error) {
-            console.error(
-                "Brevo email error:",
-                error
-            );
-    
-            throw new Error(
-                "Failed to send OTP email."
-            );
-        }
+    try {
+      await BrevoEmail.transactionalEmails.sendTransacEmail({
+        sender: {
+          email: process.env.EMAIL_FROM,
+        },
+
+        to: [
+          {
+            email: email,
+          },
+        ],
+
+        subject: "Portal Invitation",
+
+        textContent: `Dear ${info.name} you have been from the interview platform by an admin.`,
+
+      });
+
+      console.log(
+        "OTP email sent successfully:",
+        result?.messageId
+      );
+
+    } catch (error) {
+      console.error(
+        "Brevo email error:",
+        error
+      );
+
+      throw new Error(
+        "Failed to send OTP email."
+      );
+    }
 
     res.status(200).json({ message: "Recruiter deleted successfully." });
   } catch (error) {
@@ -208,39 +201,39 @@ const deleteCandidate = async (req, res) => {
       return res.status(404).json({ message: "Candidate not found." });
     }
 
-     try {
-            await BrevoEmail.transactionalEmails.sendTransacEmail({
-                sender: {
-                    email: process.env.EMAIL_FROM,
-                },
-    
-                to: [
-                    {
-                        email: email,
-                    },
-                ],
-    
-                subject: "Portal Invitation",
-    
-                textContent: `Dear ${info.name} you have been from the interview platform by an admin.`,
-    
-            });
-    
-            console.log(
-                "OTP email sent successfully:",
-                result?.messageId
-            );
-    
-        } catch (error) {
-            console.error(
-                "Brevo email error:",
-                error
-            );
-    
-            throw new Error(
-                "Failed to send OTP email."
-            );
-        }
+    try {
+      await BrevoEmail.transactionalEmails.sendTransacEmail({
+        sender: {
+          email: process.env.EMAIL_FROM,
+        },
+
+        to: [
+          {
+            email: email,
+          },
+        ],
+
+        subject: "Portal Invitation",
+
+        textContent: `Dear ${info.name} you have been from the interview platform by an admin.`,
+
+      });
+
+      console.log(
+        "OTP email sent successfully:",
+        result?.messageId
+      );
+
+    } catch (error) {
+      console.error(
+        "Brevo email error:",
+        error
+      );
+
+      throw new Error(
+        "Failed to send OTP email."
+      );
+    }
 
     res.status(200).json({ message: "Candidate deleted successfully." });
   } catch (error) {

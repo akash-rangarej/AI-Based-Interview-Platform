@@ -42,14 +42,11 @@ const createMailTransporter = () => {
 // };
 // 
 
-const BrevoEmail =  async()=>{
-
-    return new BrevoClient({
-        apiKey: process.env.BREVO_API_KEY,
-        timeoutInSeconds: 15,
-        maxRetries: 2,
-    });
-} 
+const brevo = new BrevoClient({
+    apiKey: process.env.BREVO_API_KEY,
+    timeoutInSeconds: 15,
+    maxRetries: 2,
+});
 
 const sendOtp = async (email, otp) => {
     if (process.env.EMAIL_DEBUG_OTP === "true") {
@@ -69,7 +66,7 @@ const sendOtp = async (email, otp) => {
         process.env.EMAIL_FROM_NAME || "AI Interview Platform";
 
     try {
-        const result = await BrevoEmail.transactionalEmails.sendTransacEmail({
+        const result = await brevo.transactionalEmails.sendTransacEmail({
             sender: {
                 name: senderName,
                 email: process.env.EMAIL_FROM,
@@ -732,8 +729,8 @@ module.exports = {
     verifyOtp,
     resetPassword,
     getMe,
+    brevo,
     createMailTransporter,
-    BrevoEmail,
     emailVerify,
     otpVerify,
 };

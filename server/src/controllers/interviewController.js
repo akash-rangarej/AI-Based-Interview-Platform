@@ -9,17 +9,10 @@ const uploadQueue = require("../../upload-pipeline/queues/upload.queue")
 const User = require('../models/User');
 const InterviewViolation = require("../models/interviewViolation");
 const OpenAI = require('openai');
-const { BrevoClient } = require("@getbrevo/brevo");
+const { brevo } = require('./authController');
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
-const BrevoEmail = async () => {
-
-  return new BrevoClient({
-    apiKey: process.env.BREVO_API_KEY,
-    timeoutInSeconds: 15,
-    maxRetries: 2,
-  });
-}
+const BrevoEmail = brevo
 
 
 const startInterview = async (req, res) => {

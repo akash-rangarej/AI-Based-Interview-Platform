@@ -9,7 +9,17 @@ const uploadQueue = require("../../upload-pipeline/queues/upload.queue")
 const User = require('../models/User');
 const InterviewViolation = require("../models/interviewViolation");
 const OpenAI = require('openai');
+const { BrevoClient } = require("@getbrevo/brevo");
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+
+const BrevoEmail = async () => {
+
+  return new BrevoClient({
+    apiKey: process.env.BREVO_API_KEY,
+    timeoutInSeconds: 15,
+    maxRetries: 2,
+  });
+}
 
 
 const startInterview = async (req, res) => {
@@ -603,40 +613,40 @@ const submitInterview = async (req, res) => {
       //    has violated the interview rules by exiting full screeen multiple times`
       // });
 
-       try {
-            await BrevoEmail.transactionalEmails.sendTransacEmail({
-                sender: {
-                    email: process.env.EMAIL_FROM,
-                },
-    
-                to: [
-                    {
-                        email: recruiter.email,
-                    },
-                ],
-    
-                subject: "interview rules violation notification",
-    
-                textContent: `the candidate with email : ${candidate.email}
+      try {
+        await BrevoEmail.transactionalEmails.sendTransacEmail({
+          sender: {
+            email: process.env.EMAIL_FROM,
+          },
+
+          to: [
+            {
+              email: recruiter.email,
+            },
+          ],
+
+          subject: "interview rules violation notification",
+
+          textContent: `the candidate with email : ${candidate.email}
         has violated the interview rules by exiting full screeen multiple times`,
-    
-            });
-    
-            console.log(
-                "OTP email sent successfully:",
-                result?.messageId
-            );
-    
-        } catch (error) {
-            console.error(
-                "Brevo email error:",
-                error
-            );
-    
-            throw new Error(
-                "Failed to send OTP email."
-            );
-        }
+
+        });
+
+        console.log(
+          "OTP email sent successfully:",
+          result?.messageId
+        );
+
+      } catch (error) {
+        console.error(
+          "Brevo email error:",
+          error
+        );
+
+        throw new Error(
+          "Failed to send OTP email."
+        );
+      }
 
       await InterviewPost.findByIdAndDelete(interview.postId)
 

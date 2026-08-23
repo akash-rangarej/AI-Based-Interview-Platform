@@ -3,6 +3,16 @@ const InterviewPost = require("../models/interviewpost");
 const User = require("../models/User");
 const Admin = require("../models/Admin")
 const nodemailer = require("nodemailer");
+const { BrevoClient } = require("@getbrevo/brevo");
+
+const BrevoEmail = async () => {
+
+  return new BrevoClient({
+    apiKey: process.env.BREVO_API_KEY,
+    timeoutInSeconds: 15,
+    maxRetries: 2,
+  });
+}
 // ─────────────────────────────────────────────
 // POST /api/interviews/post
 // Recruiter submits the form
@@ -60,32 +70,32 @@ const createInterviewPost = async (req, res) => {
       ? skills.split(",").map((s) => s.trim()).filter(Boolean)
       : [];
 
-    const user = await User.find({email:Email})
+    const user = await User.find({ email: Email })
 
-    if (user.length === 0 ){
-      return res.status(403).json({message:"invalid user or user does not exist."});
+    if (user.length === 0) {
+      return res.status(403).json({ message: "invalid user or user does not exist." });
     }
 
-    const exists = await InterviewPost.findOne({candidateEmail:Email});
+    const exists = await InterviewPost.findOne({ candidateEmail: Email });
 
-    if(exists){
-       return res.status(400).json({message:"the candidate hasnt finised the pev interview"});
+    if (exists) {
+      return res.status(400).json({ message: "the candidate hasnt finised the pev interview" });
     }
 
 
     //  const transporter = createMailTransporter();
 
-     
-     const post = await InterviewPost.create({
-       roundName,
-       role,
-       jobDescription: jd || "",
-       skills: skillsArray,
-       candidateType,
-       minExperience: candidateType === "experienced" ? Number(minExperience) : null,
-       maxExperience: candidateType === "experienced" ? Number(maxExperience) : null,
-       difficulty,
-       numberOfQuestions: Number(questions) || 15,
+
+    const post = await InterviewPost.create({
+      roundName,
+      role,
+      jobDescription: jd || "",
+      skills: skillsArray,
+      candidateType,
+      minExperience: candidateType === "experienced" ? Number(minExperience) : null,
+      maxExperience: candidateType === "experienced" ? Number(maxExperience) : null,
+      difficulty,
+      numberOfQuestions: Number(questions) || 15,
       followUps,
       adaptive,
       candidateEmail: Email,
@@ -95,54 +105,54 @@ const createInterviewPost = async (req, res) => {
       endTime: end,
       duration: dur,
     });
-    
-  //   await transporter.sendMail({
-  //    from: process.env.EMAIL_USER,
-  //    to: Email,
-  //    subject: "New Interview Post",
-  //    text: `You have a new interview post for the role of ${role}. Please check your dashboard for details.`,
-  //  });
 
-  try {
-            await BrevoEmail.transactionalEmails.sendTransacEmail({
-                sender: {
-                    email: process.env.EMAIL_FROM,
-                },
-    
-                to: [
-                    {
-                        email: Email,
-                    },
-                ],
-    
-                subject: "New Interview Post",
-    
-                textContent:  `You have a new interview post for the role of ${role}. Please check your dashboard for details.`,
-    
-            });
-    
-            console.log(
-                "OTP email sent successfully:",
-                result?.messageId
-            );
-    
-        } catch (error) {
-            console.error(
-                "Brevo email error:",
-                error
-            );
-    
-            throw new Error(
-                "Failed to send OTP email."
-            );
-        }
+    //   await transporter.sendMail({
+    //    from: process.env.EMAIL_USER,
+    //    to: Email,
+    //    subject: "New Interview Post",
+    //    text: `You have a new interview post for the role of ${role}. Please check your dashboard for details.`,
+    //  });
+
+    try {
+      await BrevoEmail.transactionalEmails.sendTransacEmail({
+        sender: {
+          email: process.env.EMAIL_FROM,
+        },
+
+        to: [
+          {
+            email: Email,
+          },
+        ],
+
+        subject: "New Interview Post",
+
+        textContent: `You have a new interview post for the role of ${role}. Please check your dashboard for details.`,
+
+      });
+
+      console.log(
+        "OTP email sent successfully:",
+        result?.messageId
+      );
+
+    } catch (error) {
+      console.error(
+        "Brevo email error:",
+        error
+      );
+
+      throw new Error(
+        "Failed to send OTP email."
+      );
+    }
 
     return res.status(201).json({
       message: "Interview posted successfully.",
       postId: post._id,
       expiresAt: post.expiresAt,
     });
-       
+
   } catch (err) {
     console.error("createInterviewPost error:", err);
     res.status(500).json({ message: "Server error." });
@@ -164,7 +174,7 @@ const Can_getDashboardPosts = async (req, res) => {
     let query = { status: { $in: ["active", "scheduled"] }, candidateEmail: user.email };
     let fields = "roundName role skills jobDescription candidateType minExperience maxExperience expiresAt status interviewDate startTime endTime duration";
 
-      // query.candidateEmail = user.email;
+    // query.candidateEmail = user.email;
 
     const posts = await InterviewPost.find(query)
       .select(fields)
@@ -179,7 +189,7 @@ const Can_getDashboardPosts = async (req, res) => {
 };
 
 
-const Rec_getDashboardPosts = async (req,res) =>{
+const Rec_getDashboardPosts = async (req, res) => {
   try {
     const user = await Admin.findById(req.user.id).select("email role");
 
@@ -187,18 +197,18 @@ const Rec_getDashboardPosts = async (req,res) =>{
       return res.status(404).json({ message: "User not found." });
     }
 
-  let query = { postedBy: req.user.id,status: { $in: ["active", "scheduled"] }};
-  let fields = "roundName role skills candidateType minExperience maxExperience expiresAt createdAt status difficulty numberOfQuestions candidateEmail"
+    let query = { postedBy: req.user.id, status: { $in: ["active", "scheduled"] } };
+    let fields = "roundName role skills candidateType minExperience maxExperience expiresAt createdAt status difficulty numberOfQuestions candidateEmail"
 
-const posts = await InterviewPost.find(query)
+    const posts = await InterviewPost.find(query)
       .select(fields)
       .sort({ createdAt: -1 });
 
     return res.status(200).json({ posts });
-}
-catch(err){
+  }
+  catch (err) {
     res.status(500).json({ message: "Server error." });
-}
+  }
 }
 
 // GET /api/interviews/:postId

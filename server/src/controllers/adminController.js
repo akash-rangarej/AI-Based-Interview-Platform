@@ -6,9 +6,19 @@ const Interview = require("../models/Interview")
 const InterviewPost = require("../models/interviewpost")
 const bcrypt = require("bcryptjs")
 const cloudinary = require("../config/cloudinary")
+const { BrevoClient } = require("@getbrevo/brevo");
 const { createMailTransporter } = require("./authController")
 
 // const transporter = createMailTransporter();
+
+const BrevoEmail =  async()=>{
+
+    return new BrevoClient({
+        apiKey: process.env.BREVO_API_KEY,
+        timeoutInSeconds: 15,
+        maxRetries: 2,
+    });
+}
 
 const getCandidates = async (req, res) => {
   try {

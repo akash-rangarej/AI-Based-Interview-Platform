@@ -5,7 +5,7 @@ const crypto = require("crypto");
 const nodemailer = require("nodemailer");
 const { generateTokenAndSetCookie } = require("../utils/generateToken");
 const Admin = require("../models/Admin")
-const { Resend } = require("resend");
+const { BrevoClient } = require("@getbrevo/brevo");
 const otpStore = new Map();
 
 const createMailTransporter = () => {
@@ -40,7 +40,13 @@ const createMailTransporter = () => {
 //         text: `Your password reset OTP is ${otp}. It will expire in 10 minutes.`
 //     });
 // };
-const resend = new Resend(process.env.RESEND_API_KEY);
+// 
+
+const brevo = new BrevoClient({
+    apiKey: process.env.BREVO_API_KEY,
+    timeoutInSeconds: 15,
+    maxRetries: 2,
+});
 
 const sendOtp = async (email, otp) => {
     if (process.env.EMAIL_DEBUG_OTP === "true") {
@@ -48,63 +54,222 @@ const sendOtp = async (email, otp) => {
         return;
     }
 
-    if (!process.env.RESEND_API_KEY) {
-        throw new Error("RESEND_API_KEY is not configured.");
+    if (!process.env.BREVO_API_KEY) {
+        throw new Error("BREVO_API_KEY is not configured.");
     }
 
     if (!process.env.EMAIL_FROM) {
         throw new Error("EMAIL_FROM is not configured.");
     }
 
-    const { data, error } = await resend.emails.send({
-        from: process.env.EMAIL_FROM,
-        to: [email],
-        subject: "email verify otp",
+    const senderName =
+        process.env.EMAIL_FROM_NAME || "AI Interview Platform";
 
-        text: `Your OTP is ${otp}. It will expire in 10 minutes.`,
+    try {
+        const result = await brevo.transactionalEmails.sendTransacEmail({
+            sender: {
+                name: senderName,
+                email: process.env.EMAIL_FROM,
+            },
 
-        html: `
-            <div style="
-                font-family: Arial, sans-serif;
-                max-width: 600px;
-                margin: 0 auto;
-                padding: 30px;
-                color: #333;
-            ">
-                <h2>Password Reset OTP</h2>
+            to: [
+                {
+                    email: email,
+                },
+            ],
 
-                <p>Your password reset OTP is:</p>
+            subject: "Email Verification OTP",
 
-                <div style="
-                    font-size: 32px;
-                    font-weight: bold;
-                    letter-spacing: 8px;
-                    margin: 25px 0;
-                ">
-                    ${otp}
-                </div>
+            textContent: `
+Your email verification OTP is: ${otp}
 
-                <p>
-                    This OTP will expire in
-                    <strong>10 minutes</strong>.
-                </p>
+This OTP will expire in 10 minutes.
 
-                <p>
-                    If you did not request this OTP,
-                    you can safely ignore this email.
-                </p>
-            </div>
-        `,
-    });
+If you did not request this OTP, you can safely ignore this email.
+            `.trim(),
 
-    if (error) {
-        console.error("Resend email error:", error);
-        throw new Error("Failed to send OTP email.");
+            htmlContent: `
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Email Verification OTP</title>
+</head>
+
+<body style="
+    margin: 0;
+    padding: 0;
+    background-color: #f4f6f8;
+    font-family: Arial, Helvetica, sans-serif;
+">
+
+    <table
+        width="100%"
+        cellpadding="0"
+        cellspacing="0"
+        border="0"
+        style="background-color: #f4f6f8; padding: 40px 15px;"
+    >
+        <tr>
+            <td align="center">
+
+                <table
+                    width="100%"
+                    cellpadding="0"
+                    cellspacing="0"
+                    border="0"
+                    style="
+                        max-width: 560px;
+                        background-color: #ffffff;
+                        border-radius: 12px;
+                        overflow: hidden;
+                        box-shadow: 0 4px 16px rgba(0,0,0,0.08);
+                    "
+                >
+
+                    <!-- Header -->
+                    <tr>
+                        <td
+                            align="center"
+                            style="
+                                padding: 30px 25px;
+                                background-color: #111827;
+                            "
+                        >
+                            <h1 style="
+                                margin: 0;
+                                color: #ffffff;
+                                font-size: 24px;
+                                font-weight: 600;
+                            ">
+                                AI Interview Platform
+                            </h1>
+                        </td>
+                    </tr>
+
+                    <!-- Content -->
+                    <tr>
+                        <td style="
+                            padding: 40px 35px;
+                            color: #333333;
+                        ">
+
+                            <h2 style="
+                                margin: 0 0 20px;
+                                font-size: 22px;
+                                color: #111827;
+                            ">
+                                Verify Your Email
+                            </h2>
+
+                            <p style="
+                                margin: 0 0 20px;
+                                font-size: 15px;
+                                line-height: 1.6;
+                                color: #4b5563;
+                            ">
+                                Use the verification code below to
+                                complete your email verification.
+                            </p>
+
+                            <!-- OTP -->
+                            <div style="
+                                margin: 30px 0;
+                                padding: 20px;
+                                text-align: center;
+                                background-color: #f3f4f6;
+                                border-radius: 8px;
+                            ">
+
+                                <div style="
+                                    font-size: 32px;
+                                    font-weight: 700;
+                                    letter-spacing: 8px;
+                                    color: #111827;
+                                ">
+                                    ${otp}
+                                </div>
+
+                            </div>
+
+                            <p style="
+                                margin: 0 0 12px;
+                                font-size: 14px;
+                                line-height: 1.6;
+                                color: #6b7280;
+                            ">
+                                This OTP is valid for
+                                <strong>10 minutes</strong>.
+                            </p>
+
+                            <p style="
+                                margin: 0;
+                                font-size: 14px;
+                                line-height: 1.6;
+                                color: #6b7280;
+                            ">
+                                If you did not request this verification
+                                code, you can safely ignore this email.
+                            </p>
+
+                        </td>
+                    </tr>
+
+                    <!-- Footer -->
+                    <tr>
+                        <td style="
+                            padding: 20px 35px;
+                            background-color: #f9fafb;
+                            text-align: center;
+                        ">
+
+                            <p style="
+                                margin: 0;
+                                font-size: 12px;
+                                color: #9ca3af;
+                                line-height: 1.5;
+                            ">
+                                This is an automated email.
+                                Please do not reply to this message.
+                            </p>
+
+                        </td>
+                    </tr>
+
+                </table>
+
+            </td>
+        </tr>
+    </table>
+
+</body>
+</html>
+            `.trim(),
+
+            tags: [
+                "email-verification",
+                "otp",
+            ],
+        });
+
+        console.log(
+            "OTP email sent successfully:",
+            result?.messageId
+        );
+
+        return result;
+
+    } catch (error) {
+        console.error(
+            "Brevo email error:",
+            error
+        );
+
+        throw new Error(
+            "Failed to send OTP email."
+        );
     }
-
-    console.log("OTP email sent successfully:", data?.id);
-
-    return data;
 };
 
 

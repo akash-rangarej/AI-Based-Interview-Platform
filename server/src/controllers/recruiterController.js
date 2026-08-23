@@ -5,7 +5,7 @@ const { deleteInterviewPost } = require("./interviewPostController");
 const Admin = require("../models/Admin");
 const bcrypt = require("bcryptjs")
 const Interviewpost = require("../models/interviewpost")
-const createMailTransporter = require("./authController")
+// const createMailTransporter = require("./authController")
 const cloudinary  = require("../config/cloudinary")
 
 

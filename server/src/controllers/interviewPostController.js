@@ -7,15 +7,15 @@ const nodemailer = require("nodemailer");
 // POST /api/interviews/post
 // Recruiter submits the form
 // ─────────────────────────────────────────────
-const createMailTransporter = () => {
-    return nodemailer.createTransport({
-        service: process.env.EMAIL_SERVICE,
-        auth: {
-            user: process.env.EMAIL_USER,
-            pass: process.env.EMAIL_PASS
-        }
-    });
-};
+// const createMailTransporter = () => {
+//     return nodemailer.createTransport({
+//         service: process.env.EMAIL_SERVICE,
+//         auth: {
+//             user: process.env.EMAIL_USER,
+//             pass: process.env.EMAIL_PASS
+//         }
+//     });
+// };
 
 const createInterviewPost = async (req, res) => {
   try {
@@ -73,7 +73,7 @@ const createInterviewPost = async (req, res) => {
     }
 
 
-     const transporter = createMailTransporter();
+    //  const transporter = createMailTransporter();
 
      
      const post = await InterviewPost.create({
@@ -96,12 +96,46 @@ const createInterviewPost = async (req, res) => {
       duration: dur,
     });
     
-    await transporter.sendMail({
-     from: process.env.EMAIL_USER,
-     to: Email,
-     subject: "New Interview Post",
-     text: `You have a new interview post for the role of ${role}. Please check your dashboard for details.`,
-   });
+  //   await transporter.sendMail({
+  //    from: process.env.EMAIL_USER,
+  //    to: Email,
+  //    subject: "New Interview Post",
+  //    text: `You have a new interview post for the role of ${role}. Please check your dashboard for details.`,
+  //  });
+
+  try {
+            await BrevoEmail.transactionalEmails.sendTransacEmail({
+                sender: {
+                    email: process.env.EMAIL_FROM,
+                },
+    
+                to: [
+                    {
+                        email: Email,
+                    },
+                ],
+    
+                subject: "New Interview Post",
+    
+                textContent:  `You have a new interview post for the role of ${role}. Please check your dashboard for details.`,
+    
+            });
+    
+            console.log(
+                "OTP email sent successfully:",
+                result?.messageId
+            );
+    
+        } catch (error) {
+            console.error(
+                "Brevo email error:",
+                error
+            );
+    
+            throw new Error(
+                "Failed to send OTP email."
+            );
+        }
 
     return res.status(201).json({
       message: "Interview posted successfully.",

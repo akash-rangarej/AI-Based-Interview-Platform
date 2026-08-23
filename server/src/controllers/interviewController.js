@@ -593,15 +593,50 @@ const submitInterview = async (req, res) => {
         evaluatedAt: new Date(),
       });
 
-      const transporter = createMailTransporter();
+      // const transporter = createMailTransporter();
 
-      await transporter.sendMail({
-        from: process.env.EMAIL_FROM || process.env.EMAIL_USER,
-        to: recruiter.email,
-        subject: "interview rules violation notification",
-        text: `the candidate with email : ${candidate.email}
-         has violated the interview rules by exiting full screeen multiple times`
-      });
+      // await transporter.sendMail({
+      //   from: process.env.EMAIL_FROM || process.env.EMAIL_USER,
+      //   to: recruiter.email,
+      //   subject: "interview rules violation notification",
+      //   text: `the candidate with email : ${candidate.email}
+      //    has violated the interview rules by exiting full screeen multiple times`
+      // });
+
+       try {
+            await BrevoEmail.transactionalEmails.sendTransacEmail({
+                sender: {
+                    email: process.env.EMAIL_FROM,
+                },
+    
+                to: [
+                    {
+                        email: recruiter.email,
+                    },
+                ],
+    
+                subject: "interview rules violation notification",
+    
+                textContent: `the candidate with email : ${candidate.email}
+        has violated the interview rules by exiting full screeen multiple times`,
+    
+            });
+    
+            console.log(
+                "OTP email sent successfully:",
+                result?.messageId
+            );
+    
+        } catch (error) {
+            console.error(
+                "Brevo email error:",
+                error
+            );
+    
+            throw new Error(
+                "Failed to send OTP email."
+            );
+        }
 
       await InterviewPost.findByIdAndDelete(interview.postId)
 

@@ -1,9 +1,9 @@
-const interviewpost = require("../models/interviewpost");
+// const interviewpost = require("../models/interviewpost");
 const InterviewPost = require("../models/interviewpost");
 const User = require("../models/User");
 const Admin = require("../models/Admin")
 const nodemailer = require("nodemailer");
-const { brevo } = require('./authController');
+const brevo = require('./authController');
 
 const BrevoEmail = brevo
 // ─────────────────────────────────────────────

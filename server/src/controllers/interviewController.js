@@ -9,7 +9,7 @@ const uploadQueue = require("../../upload-pipeline/queues/upload.queue")
 const User = require('../models/User');
 const InterviewViolation = require("../models/interviewViolation");
 const OpenAI = require('openai');
-const { brevo } = require('./authController');
+const  brevo  = require('./authController');
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
 const BrevoEmail = brevo

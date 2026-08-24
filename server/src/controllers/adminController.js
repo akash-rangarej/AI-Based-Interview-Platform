@@ -6,7 +6,7 @@ const Interview = require("../models/Interview")
 const InterviewPost = require("../models/interviewpost")
 const bcrypt = require("bcryptjs")
 const cloudinary = require("../config/cloudinary")
-const { brevo } = require('./authController');
+const  brevo  = require('./authController');
 const { createMailTransporter } = require("./authController")
 
 // const transporter = createMailTransporter();

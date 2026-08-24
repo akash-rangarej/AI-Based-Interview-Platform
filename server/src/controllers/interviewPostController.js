@@ -3,9 +3,8 @@ const InterviewPost = require("../models/interviewpost");
 const User = require("../models/User");
 const Admin = require("../models/Admin")
 const nodemailer = require("nodemailer");
-const brevo = require('./authController');
+const { BrevoClient } = require("@getbrevo/brevo");
 
-const BrevoEmail = brevo
 // ─────────────────────────────────────────────
 // POST /api/interviews/post
 // Recruiter submits the form
@@ -105,6 +104,12 @@ const createInterviewPost = async (req, res) => {
     //    subject: "New Interview Post",
     //    text: `You have a new interview post for the role of ${role}. Please check your dashboard for details.`,
     //  });
+
+    const BrevoEmail = new BrevoClient({
+    apiKey: process.env.BREVO_API_KEY,
+    timeoutInSeconds: 15,
+    maxRetries: 2,
+});
 
     try {
       await BrevoEmail.transactionalEmails.sendTransacEmail({

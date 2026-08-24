@@ -131,7 +131,6 @@ const createInterviewPost = async (req, res) => {
 
       console.log(
         "OTP email sent successfully:",
-        result?.messageId
       );
 
     } catch (error) {
